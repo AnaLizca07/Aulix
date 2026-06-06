@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.hilt.android)
+    kotlin("kapt")
 }
 
 android {
@@ -40,20 +43,58 @@ android {
 }
 
 dependencies {
-
+    // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+
+    // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.ui.text)
     implementation(libs.androidx.material3)
 
+    // Navegación
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.kotlin.serialization)
-    implementation(libs.androidx.ui.text)
 
+    // Serialización
+    implementation(libs.kotlin.serialization)
+
+    // Lifecycle / ViewModel
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // DI — Hilt
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+
+    // Red — Retrofit + OkHttp
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.kotlin.serialization)
+    implementation(libs.okhttp.core)
+    implementation(libs.okhttp.logging)
+
+    // Persistencia local — DataStore
+    implementation(libs.datastore.preferences)
+
+    // Cámara — CameraX
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
+
+    // QR — ML Kit
+    implementation(libs.mlkit.barcode.scanning)
+
+    // Imágenes — Coil
+    implementation(libs.coil.compose)
+
+    // Fuentes Google
+    implementation(libs.compose.ui.google.fonts)
+
+    // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
