@@ -34,6 +34,7 @@ mlkitBarcodeScanning = "17.3.0"
 
 # Imágenes
 coil = "2.7.0"
+googleFonts = "1.7.8"
 
 [libraries]
 # Core
@@ -86,6 +87,9 @@ mlkit-barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning"
 
 # Imágenes — Coil
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+
+# Fuentes Google
+compose-ui-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "googleFonts" }
 
 # Tests
 junit = { group = "junit", name = "junit", version.ref = "junit" }

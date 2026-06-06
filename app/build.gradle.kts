@@ -91,6 +91,9 @@ dependencies {
     // Imágenes — Coil
     implementation(libs.coil.compose)
 
+    // Fuentes Google
+    implementation(libs.compose.ui.google.fonts)
+
     // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
