@@ -6,10 +6,19 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.example.aulix.domain.model.UserRole
+import com.example.aulix.domain.session.UserSession
 import com.example.aulix.ui.auth.AuthViewModel
 import com.example.aulix.ui.auth.LoginScreen
 import com.example.aulix.ui.auth.RegisterScreen
+import com.example.aulix.ui.auxiliar.historial.HistorialScreen
+import com.example.aulix.ui.auxiliar.home.AuxiliarHomeScreen
+import com.example.aulix.ui.auxiliar.inventario.InventarioScreen
+import com.example.aulix.ui.auxiliar.perfil.PerfilScreen
+import com.example.aulix.ui.auxiliar.prestamo.CambiarDestinatarioScreen
+import com.example.aulix.ui.auxiliar.prestamo.RegistrarPrestamoScreen
+import com.example.aulix.ui.auxiliar.search.SearchEquipoScreen
 import kotlinx.serialization.Serializable
 
 sealed interface Route {
@@ -34,6 +43,12 @@ sealed interface Route {
 
     // Auxiliar
     @Serializable object AuxiliarPrestamos : Route
+    @Serializable object AuxiliarBuscarEquipo : Route
+    @Serializable data class AuxiliarRegistrarPrestamo(val equipoId: String) : Route
+    @Serializable object AuxiliarHistorial : Route
+    @Serializable object AuxiliarCambiarDestinatario : Route
+    @Serializable object AuxiliarInventario : Route
+    @Serializable object AuxiliarPerfil : Route
 
     // Soporte
     @Serializable object SoporteIncidencias : Route
@@ -55,6 +70,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                         UserRole.AUXILIAR        -> Route.AuxiliarDashboard
                         UserRole.SOPORTE_TECNICO -> Route.SoporteDashboard
                     }
+                    UserSession.login(user)
                     navController.navigate(destination) {
                         popUpTo(Route.Login) { inclusive = true }
                     }
@@ -73,6 +89,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                         UserRole.AUXILIAR        -> Route.AuxiliarDashboard
                         UserRole.SOPORTE_TECNICO -> Route.SoporteDashboard
                     }
+                    UserSession.login(user)
                     navController.navigate(destination) {
                         popUpTo(Route.Login) { inclusive = true }
                     }
@@ -84,21 +101,96 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         // Dashboards — placeholder hasta implementar cada módulo
         composable<Route.DocenteDashboard> {
             RolePlaceholderScreen(role = "Docente", initials = "CG", onLogout = {
+                UserSession.logout()
                 navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
             })
         }
         composable<Route.EstudianteDashboard> {
             RolePlaceholderScreen(role = "Estudiante", initials = "MV", onLogout = {
+                UserSession.logout()
                 navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
             })
         }
         composable<Route.AuxiliarDashboard> {
-            RolePlaceholderScreen(role = "Auxiliar", initials = "DM", onLogout = {
-                navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
-            })
+            val user = UserSession.currentUser
+            if (user == null) {
+                navController.navigate(Route.Login) {
+                    popUpTo(0) { inclusive = true }
+                }
+                return@composable
+            }
+            AuxiliarHomeScreen(
+                user = user,
+                onNuevoPrestamo = { navController.navigate(Route.AuxiliarBuscarEquipo) },
+                onVerHistorial = { navController.navigate(Route.AuxiliarHistorial) },
+                onVerInventario = { navController.navigate(Route.AuxiliarInventario) },
+                onVerPerfil = { navController.navigate(Route.AuxiliarPerfil) },
+                onLogout = {
+                    UserSession.logout()
+                    navController.navigate(Route.Login) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable<Route.AuxiliarBuscarEquipo> {
+            SearchEquipoScreen(
+                onBack = { navController.popBackStack() },
+                onContinuar = { equipoId ->
+                    navController.navigate(Route.AuxiliarRegistrarPrestamo(equipoId))
+                }
+            )
+        }
+        composable<Route.AuxiliarRegistrarPrestamo> {
+            val args = it.toRoute<Route.AuxiliarRegistrarPrestamo>()
+            val user = UserSession.currentUser ?: return@composable
+            RegistrarPrestamoScreen(
+                equipoId = args.equipoId,
+                user = user,
+                navController = navController,
+                onBack = { navController.popBackStack() },
+                onCambiarDestinatario = { navController.navigate(Route.AuxiliarCambiarDestinatario) },
+                onConfirmado = {
+                    navController.navigate(Route.AuxiliarDashboard) {
+                        popUpTo(Route.AuxiliarDashboard) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable<Route.AuxiliarCambiarDestinatario> {
+            CambiarDestinatarioScreen(
+                onBack = { navController.popBackStack() },
+                onSeleccionar = { destinatario ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("destinatario_nombre", destinatario.nombre)
+                    navController.previousBackStackEntry?.savedStateHandle?.set("destinatario_id", destinatario.id)
+                    navController.previousBackStackEntry?.savedStateHandle?.set("destinatario_programa", destinatario.programa)
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable<Route.AuxiliarHistorial> {
+            HistorialScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<Route.AuxiliarInventario> {
+            InventarioScreen(onBack = { navController.popBackStack() })
+        }
+        composable<Route.AuxiliarPerfil> {
+            PerfilScreen(
+                user = UserSession.currentUser,
+                onBack = { navController.popBackStack() },
+                onLogout = {
+                    UserSession.logout()
+                    navController.navigate(Route.Login) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
         }
         composable<Route.SoporteDashboard> {
             RolePlaceholderScreen(role = "Soporte Técnico", initials = "JR", onLogout = {
+                UserSession.logout()
                 navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
             })
         }
