@@ -20,17 +20,7 @@ class AuxiliarHomeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    init {
-        val (disponibles, prestados, reparacion) = FakePrestamoDataSource.getKPIs()
-        _uiState.update {
-            it.copy(
-                disponibles = disponibles,
-                prestados = prestados,
-                enReparacion = reparacion,
-                prestamosRecientes = FakePrestamoDataSource.getPrestamosRecientes()
-            )
-        }
-    }
+    init { recargarDatos() }
 
     fun recargarDatos() {
         val (disponibles, prestados, reparacion) = FakePrestamoDataSource.getKPIs()

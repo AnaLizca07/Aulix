@@ -63,7 +63,6 @@ fun SearchEquipoScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // TOP BAR
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -98,7 +97,6 @@ fun SearchEquipoScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
             ) {
-                // SearchBar
                 OutlinedTextField(
                     value = state.query,
                     onValueChange = { viewModel.onQueryChange(it) },
@@ -138,7 +136,6 @@ fun SearchEquipoScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Chips filtro
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(viewModel.filtros) { filtro ->
                         val seleccionado = state.filtroActivo == filtro
@@ -177,22 +174,24 @@ fun SearchEquipoScreen(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
+            }
 
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 8.dp)
-                ) {
-                    items(
-                        items = state.resultados,
-                        key = { it.id }
-                    ) { equipo ->
-                        EquipoItemRow(
-                            equipo = equipo,
-                            seleccionado = state.equipoSeleccionado?.id == equipo.id,
-                            onClick = { viewModel.onEquipoSeleccionado(equipo) }
-                        )
-                    }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp)
+            ) {
+                items(
+                    items = state.resultados,
+                    key = { it.id }
+                ) { equipo ->
+                    EquipoItemRow(
+                        equipo = equipo,
+                        seleccionado = state.equipoSeleccionado?.id == equipo.id,
+                        onClick = { viewModel.onEquipoSeleccionado(equipo) }
+                    )
                 }
             }
         }
@@ -261,12 +260,9 @@ private fun EquipoItemRow(
             Spacer(modifier = Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 val (label, color, bgColor) = when (equipo.estado) {
-                    EstadoEquipo.DISPONIBLE ->
-                        Triple("DISPONIBLE", StatusGreen, StatusGreenBg)
-                    EstadoEquipo.PRESTADO ->
-                        Triple("PRESTADO", StatusAmber, StatusAmberBg)
-                    EstadoEquipo.REPARACION ->
-                        Triple("REPARACIÓN", StatusRed, StatusRedBg)
+                    EstadoEquipo.DISPONIBLE -> Triple("DISPONIBLE", StatusGreen, StatusGreenBg)
+                    EstadoEquipo.PRESTADO   -> Triple("PRESTADO",   StatusAmber, StatusAmberBg)
+                    EstadoEquipo.REPARACION -> Triple("REPARACIÓN", StatusRed,   StatusRedBg)
                 }
                 StatusChip(label = label, color = color, backgroundColor = bgColor)
                 if (seleccionado) {

@@ -3,10 +3,10 @@ package com.example.aulix.ui.auxiliar.historial
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aulix.domain.model.EstadoPrestamo
 import com.example.aulix.domain.model.Prestamo
-import com.example.aulix.ui.components.AulixCard
 import com.example.aulix.ui.components.StatusChip
 import com.example.aulix.ui.theme.*
 
@@ -39,9 +38,7 @@ fun HistorialScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
         ) {
-            // TOP BAR
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,113 +75,106 @@ fun HistorialScreen(
                 }
             }
 
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .weight(1f),
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                // Card analítica
-                AulixCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Cobalto, RoundedCornerShape(16.dp))
-                ) {
-                    Column(
+                item {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Cobalto),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Cobalto)
-                            .padding(20.dp)
+                            .padding(horizontal = 20.dp)
                     ) {
-                        Text(
-                            text = "MAYO 2026 · A LA FECHA",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.7f),
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Bottom
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp)
                         ) {
                             Text(
-                                text = state.totalMes.toString(),
-                                style = MaterialTheme.typography.displayLarge,
-                                color = Color.White
+                                text = "MAYO 2026 · A LA FECHA",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.7f),
+                                letterSpacing = 1.sp
                             )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Column(horizontalAlignment = Alignment.End) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Bottom
+                            ) {
                                 Text(
-                                    text = state.comparativaMes,
-                                    style = MaterialTheme.typography.labelMedium,
+                                    text = state.totalMes.toString(),
+                                    style = MaterialTheme.typography.displayLarge,
                                     color = Color.White
                                 )
-                                Text(
-                                    text = "vs mes anterior",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.6f)
+                                Spacer(modifier = Modifier.weight(1f))
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = state.comparativaMes,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "vs mes anterior",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "préstamos registrados",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            BarChartCanvas(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TabRow(
+                            selectedTabIndex = viewModel.tabs.indexOf(state.tabActivo),
+                            containerColor = Color.White,
+                            contentColor = Cobalto,
+                            divider = {
+                                HorizontalDivider(color = BorderLight, thickness = 1.dp)
+                            }
+                        ) {
+                            viewModel.tabs.forEach { tab ->
+                                Tab(
+                                    selected = state.tabActivo == tab,
+                                    onClick = { viewModel.onTabChange(tab) },
+                                    text = {
+                                        Text(
+                                            text = tab,
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    },
+                                    selectedContentColor = Cobalto,
+                                    unselectedContentColor = Tinta.copy(alpha = 0.5f)
                                 )
                             }
                         }
-                        Text(
-                            text = "préstamos registrados",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        BarChartCanvas(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                        )
                     }
                 }
 
-                // TabRow
-                TabRow(
-                    selectedTabIndex = viewModel.tabs.indexOf(state.tabActivo),
-                    containerColor = Color.White,
-                    contentColor = Cobalto,
-                    divider = {
-                        HorizontalDivider(color = BorderLight, thickness = 1.dp)
-                    }
-                ) {
-                    viewModel.tabs.forEach { tab ->
-                        Tab(
-                            selected = state.tabActivo == tab,
-                            onClick = { viewModel.onTabChange(tab) },
-                            text = {
-                                Text(
-                                    text = tab,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            },
-                            selectedContentColor = Cobalto,
-                            unselectedContentColor = Tinta.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-
-                // Lista agrupada por fecha
-                // Column en lugar de LazyColumn — estamos dentro de verticalScroll
-                if (state.prestamosAgrupados.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Sin préstamos en esta categoría",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Tinta.copy(alpha = 0.4f)
-                        )
-                    }
-                } else {
-                    state.prestamosAgrupados.forEach { (fecha, prestamos) ->
+                state.prestamosAgrupados.forEach { (fecha, prestamos) ->
+                    item(key = "header_$fecha") {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp)
+                                .padding(vertical = 4.dp)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -199,18 +189,37 @@ fun HistorialScreen(
                                 letterSpacing = 0.5.sp
                             )
                         }
-                        prestamos.forEach { prestamo ->
+                    }
+                    items(
+                        items = prestamos,
+                        key = { "prestamo_${it.id}" }
+                    ) { prestamo ->
+                        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                             HistorialItemRow(prestamo = prestamo)
                             HorizontalDivider(
                                 color = Tinta.copy(alpha = 0.07f),
                                 thickness = 1.dp
                             )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                if (state.prestamosAgrupados.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Sin préstamos en esta categoría",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Tinta.copy(alpha = 0.4f)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -270,26 +279,33 @@ private fun HistorialItemRow(prestamo: Prestamo) {
         }
         Spacer(modifier = Modifier.width(8.dp))
         val (label, color, bgColor) = when (prestamo.estado) {
-            EstadoPrestamo.ACTIVO   -> Triple("ACTIVO", Cobalto, Cielo)
+            EstadoPrestamo.ACTIVO   -> Triple("ACTIVO",   Cobalto,     Cielo)
             EstadoPrestamo.DEVUELTO -> Triple("DEVUELTO", StatusGreen, StatusGreenBg)
-            EstadoPrestamo.VENCIDO  -> Triple("VENCIDO", StatusRed, StatusRedBg)
+            EstadoPrestamo.VENCIDO  -> Triple("VENCIDO",  StatusRed,   StatusRedBg)
         }
         StatusChip(label = label, color = color, backgroundColor = bgColor)
     }
 }
 
 private fun formatearFecha(fecha: String): String {
-    return when (fecha) {
-        "2026-05-22" -> "• HOY · JUE 22 MAY"
-        "2026-05-21" -> "MIÉRCOLES 21 MAY"
-        else -> {
-            val parts = fecha.split("-")
-            if (parts.size == 3) {
-                val meses = listOf("ENE","FEB","MAR","ABR","MAY","JUN",
-                                   "JUL","AGO","SEP","OCT","NOV","DIC")
-                val mes = parts[1].toIntOrNull()?.minus(1)?.let { meses.getOrNull(it) } ?: ""
-                "HOY · ${parts[2]} $mes ${parts[0]}"
-            } else fecha
-        }
-    }
+    val parts = fecha.split("-")
+    if (parts.size != 3) return fecha
+    val anio = parts[0].toIntOrNull() ?: return fecha
+    val mes  = parts[1].toIntOrNull() ?: return fecha
+    val dia  = parts[2].toIntOrNull() ?: return fecha
+
+    val meses   = listOf("ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC")
+    val diasSem = listOf("DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB")
+    val mesStr  = meses.getOrElse(mes - 1) { "" }
+
+    val cal = java.util.Calendar.getInstance()
+    cal.set(anio, mes - 1, dia)
+    val diaSemana = diasSem.getOrElse(cal.get(java.util.Calendar.DAY_OF_WEEK) - 1) { "" }
+
+    val hoy = java.util.Calendar.getInstance()
+    val esHoy = anio == hoy.get(java.util.Calendar.YEAR) &&
+                mes  == hoy.get(java.util.Calendar.MONTH) + 1 &&
+                dia  == hoy.get(java.util.Calendar.DAY_OF_MONTH)
+
+    return if (esHoy) "• HOY · $diaSemana $dia $mesStr" else "$diaSemana $dia $mesStr"
 }

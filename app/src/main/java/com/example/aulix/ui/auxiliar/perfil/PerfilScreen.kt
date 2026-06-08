@@ -36,7 +36,6 @@ fun PerfilScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // TOP BAR
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -66,14 +65,12 @@ fun PerfilScreen(
                 }
             }
 
-            // CONTENT
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Card usuario
                 AulixCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -113,7 +110,6 @@ fun PerfilScreen(
                     }
                 }
 
-                // Card info asignación
                 AulixCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         InfoRow(label = "Laboratorio", value = "LAB-B-204")

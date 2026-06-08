@@ -2,8 +2,6 @@ package com.example.aulix.ui.auxiliar.prestamo
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.navigation.NavHostController
-import com.example.aulix.domain.model.Destinatario
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.example.aulix.domain.model.Destinatario
 import com.example.aulix.domain.model.User
 import com.example.aulix.domain.model.UserRole
 import com.example.aulix.ui.components.AulixButton
@@ -69,7 +69,6 @@ fun RegistrarPrestamoScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // TOP BAR
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -105,7 +104,6 @@ fun RegistrarPrestamoScreen(
                     .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Card equipo seleccionado
                 state.equipo?.let { equipo ->
                     AulixCard {
                         Row(
@@ -150,7 +148,6 @@ fun RegistrarPrestamoScreen(
                     }
                 }
 
-                // Sección destinatario
                 SectionLabel("DESTINATARIO")
                 AulixCard(
                     modifier = Modifier.border(1.dp, Cobalto, RoundedCornerShape(16.dp))
@@ -192,7 +189,6 @@ fun RegistrarPrestamoScreen(
                     }
                 }
 
-                // Fecha y hora
                 SectionLabel("FECHA · HORA / DEVOLUCIÓN")
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -236,7 +232,6 @@ fun RegistrarPrestamoScreen(
                     }
                 }
 
-                // Chips duración
                 val duraciones = listOf(1 to "1h", 2 to "2h", 4 to "4h", 0 to "Cierre del día")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     duraciones.forEach { (horas, label) ->
@@ -266,15 +261,16 @@ fun RegistrarPrestamoScreen(
                     }
                 }
 
-                // Responsable
                 SectionLabel("RESPONSABLE DEL PRÉSTAMO")
-                AulixCard(
-                    modifier = Modifier.background(Arena, RoundedCornerShape(16.dp))
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Arena),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         UserAvatar(
@@ -297,7 +293,6 @@ fun RegistrarPrestamoScreen(
                     }
                 }
 
-                // Estado al entregar
                 SectionLabel("ESTADO AL ENTREGAR")
                 Row(
                     modifier = Modifier.fillMaxWidth(),

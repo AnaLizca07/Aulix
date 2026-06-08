@@ -37,7 +37,6 @@ fun InventarioScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // TOP BAR
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -67,7 +66,6 @@ fun InventarioScreen(
                 }
             }
 
-            // KPIs
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -147,7 +145,8 @@ fun InventarioScreen(
 
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .weight(1f)
                     .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 16.dp)

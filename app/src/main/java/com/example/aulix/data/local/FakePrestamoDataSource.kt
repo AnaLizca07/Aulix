@@ -56,15 +56,6 @@ object FakePrestamoDataSource {
         return Triple(disponibles, prestados, reparacion)
     }
 
-    fun getEquiposByQuery(query: String): List<Equipo> {
-        if (query.isBlank()) return equipos
-        return equipos.filter {
-            it.nombre.contains(query, ignoreCase = true) ||
-            it.codigo.contains(query, ignoreCase = true) ||
-            it.marca.contains(query, ignoreCase = true)
-        }
-    }
-
     fun getPrestamosAgrupados(): Map<String, List<Prestamo>> =
         prestamos.groupBy { it.fecha }
 

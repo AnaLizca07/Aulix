@@ -45,7 +45,6 @@ fun AuxiliarHomeScreen(
     viewModel: AuxiliarHomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
         containerColor = Lienzo,
@@ -55,14 +54,10 @@ fun AuxiliarHomeScreen(
                 tonalElevation = 0.dp
             ) {
                 NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = {
-                        Icon(Icons.Default.Home, contentDescription = "Inicio")
-                    },
-                    label = {
-                        Text("Inicio", style = MaterialTheme.typography.labelSmall)
-                    },
+                    selected = true,
+                    onClick = {},
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
+                    label = { Text("Inicio", style = MaterialTheme.typography.labelSmall) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Cobalto,
                         selectedTextColor = Cobalto,
@@ -73,34 +68,10 @@ fun AuxiliarHomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { onVerInventario() },
-                    icon = {
-                        Icon(Icons.Default.Inventory2, contentDescription = "Inventario")
-                    },
-                    label = {
-                        Text("Inventario", style = MaterialTheme.typography.labelSmall)
-                    },
+                    onClick = onVerInventario,
+                    icon = { Icon(Icons.Default.Inventory2, contentDescription = "Inventario") },
+                    label = { Text("Inventario", style = MaterialTheme.typography.labelSmall) },
                     colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = Tinta.copy(alpha = 0.4f),
-                        unselectedTextColor = Tinta.copy(alpha = 0.4f),
-                        indicatorColor = Cielo
-                    )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = {
-                        selectedTab = 2
-                        onVerHistorial()
-                    },
-                    icon = {
-                        Icon(Icons.Default.History, contentDescription = "Historial")
-                    },
-                    label = {
-                        Text("Historial", style = MaterialTheme.typography.labelSmall)
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Cobalto,
-                        selectedTextColor = Cobalto,
                         unselectedIconColor = Tinta.copy(alpha = 0.4f),
                         unselectedTextColor = Tinta.copy(alpha = 0.4f),
                         indicatorColor = Cielo
@@ -108,13 +79,20 @@ fun AuxiliarHomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { onVerPerfil() },
-                    icon = {
-                        Icon(Icons.Default.Person, contentDescription = "Perfil")
-                    },
-                    label = {
-                        Text("Perfil", style = MaterialTheme.typography.labelSmall)
-                    },
+                    onClick = onVerHistorial,
+                    icon = { Icon(Icons.Default.History, contentDescription = "Historial") },
+                    label = { Text("Historial", style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(
+                        unselectedIconColor = Tinta.copy(alpha = 0.4f),
+                        unselectedTextColor = Tinta.copy(alpha = 0.4f),
+                        indicatorColor = Cielo
+                    )
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onVerPerfil,
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
+                    label = { Text("Perfil", style = MaterialTheme.typography.labelSmall) },
                     colors = NavigationBarItemDefaults.colors(
                         unselectedIconColor = Tinta.copy(alpha = 0.4f),
                         unselectedTextColor = Tinta.copy(alpha = 0.4f),
@@ -130,7 +108,6 @@ fun AuxiliarHomeScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // TOP BAR
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,13 +139,11 @@ fun AuxiliarHomeScreen(
                 }
             }
 
-            // BODY
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
             ) {
-                // Saludo
                 Text(
                     text = "Hola, ${user.fullName.split(" ").first()} —",
                     style = MaterialTheme.typography.bodyLarge,
@@ -183,7 +158,6 @@ fun AuxiliarHomeScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // CTA Nuevo préstamo
                 AulixButton(
                     text = "Nuevo préstamo",
                     onClick = onNuevoPrestamo,
@@ -198,7 +172,6 @@ fun AuxiliarHomeScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // SearchBar decorativo — clickable navega a búsqueda
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -225,7 +198,6 @@ fun AuxiliarHomeScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // KPIs
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -291,7 +263,6 @@ fun AuxiliarHomeScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Header historial reciente
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -314,7 +285,6 @@ fun AuxiliarHomeScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Column en lugar de LazyColumn porque ya estamos dentro de verticalScroll
                 state.prestamosRecientes.take(5).forEach { prestamo ->
                     PrestamoItemRow(prestamo = prestamo)
                     HorizontalDivider(
@@ -367,15 +337,11 @@ private fun PrestamoItemRow(prestamo: Prestamo) {
         Spacer(modifier = Modifier.width(8.dp))
         Column(horizontalAlignment = Alignment.End) {
             val (label, color, bgColor) = when (prestamo.estado) {
-                EstadoPrestamo.ACTIVO   -> Triple("ACTIVO", Cobalto, Cielo)
+                EstadoPrestamo.ACTIVO   -> Triple("ACTIVO",   Cobalto,     Cielo)
                 EstadoPrestamo.DEVUELTO -> Triple("DEVUELTO", StatusGreen, StatusGreenBg)
-                EstadoPrestamo.VENCIDO  -> Triple("VENCIDO", StatusRed, StatusRedBg)
+                EstadoPrestamo.VENCIDO  -> Triple("VENCIDO",  StatusRed,   StatusRedBg)
             }
-            StatusChip(
-                label = label,
-                color = color,
-                backgroundColor = bgColor
-            )
+            StatusChip(label = label, color = color, backgroundColor = bgColor)
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = prestamo.horaInicio,

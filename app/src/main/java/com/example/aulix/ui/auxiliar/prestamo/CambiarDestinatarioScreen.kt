@@ -55,7 +55,6 @@ fun CambiarDestinatarioScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // TOP BAR
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -85,7 +84,6 @@ fun CambiarDestinatarioScreen(
                 }
             }
 
-            // Search bar
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
