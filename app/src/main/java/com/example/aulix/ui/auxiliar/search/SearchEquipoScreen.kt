@@ -42,7 +42,8 @@ fun SearchEquipoScreen(
     Scaffold(
         containerColor = Lienzo,
         bottomBar = {
-            Surface(shadowElevation = 8.dp) {
+            Column {
+                HorizontalDivider(color = Tinta.copy(alpha = 0.08f), thickness = 1.dp)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -181,7 +182,11 @@ fun SearchEquipoScreen(
                     .fillMaxWidth()
                     .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp)
+                contentPadding = PaddingValues(
+                    start = 20.dp,
+                    end = 20.dp,
+                    bottom = innerPadding.calculateBottomPadding() + 16.dp
+                )
             ) {
                 items(
                     items = state.resultados,

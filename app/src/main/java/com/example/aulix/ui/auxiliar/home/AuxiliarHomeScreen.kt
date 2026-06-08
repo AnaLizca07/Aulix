@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,7 +29,6 @@ import com.example.aulix.domain.model.EstadoPrestamo
 import com.example.aulix.domain.model.Prestamo
 import com.example.aulix.domain.model.User
 import com.example.aulix.domain.model.UserRole
-import com.example.aulix.ui.components.AulixButton
 import com.example.aulix.ui.components.AulixCard
 import com.example.aulix.ui.components.StatusChip
 import com.example.aulix.ui.components.UserAvatar
@@ -108,6 +108,7 @@ fun AuxiliarHomeScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
+            // ── Header ────────────────────────────────────────────────────────
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,6 +145,7 @@ fun AuxiliarHomeScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
             ) {
+                // ── Saludo + contador ─────────────────────────────────────────
                 Text(
                     text = "Hola, ${user.fullName.split(" ").first()} —",
                     style = MaterialTheme.typography.bodyLarge,
@@ -151,27 +153,64 @@ fun AuxiliarHomeScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${state.prestados} equipos prestados ahora.",
+                    text = "${state.prestados} equipos prestados\nahora.",
                     style = MaterialTheme.typography.displayLarge,
-                    color = Tinta
+                    color = Tinta,
+                    lineHeight = 40.sp
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                AulixButton(
-                    text = "Nuevo préstamo",
-                    onClick = onNuevoPrestamo,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
+                // ── Botón Nuevo préstamo ──────────────────────────────────────
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Cobalto)
+                        .clickable { onNuevoPrestamo() }
+                        .padding(horizontal = 20.dp, vertical = 18.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.White.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Nuevo préstamo",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Escanea el código o busca el equipo",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.75f)
+                            )
+                        }
+                        Text(
+                            text = "→",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
+                            fontWeight = FontWeight.Light
                         )
                     }
-                )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // ── Barra de búsqueda ─────────────────────────────────────────
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -198,6 +237,7 @@ fun AuxiliarHomeScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // ── KPIs ──────────────────────────────────────────────────────
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -212,7 +252,8 @@ fun AuxiliarHomeScreen(
                             Text(
                                 text = state.disponibles.toString(),
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = StatusGreen
+                                color = StatusGreen,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "Disponibles",
@@ -231,7 +272,8 @@ fun AuxiliarHomeScreen(
                             Text(
                                 text = state.prestados.toString(),
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = StatusAmber
+                                color = StatusAmber,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "Prestados",
@@ -250,7 +292,8 @@ fun AuxiliarHomeScreen(
                             Text(
                                 text = state.enReparacion.toString(),
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = StatusRed
+                                color = StatusRed,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "Reparación",
@@ -263,6 +306,7 @@ fun AuxiliarHomeScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // ── Historial reciente ────────────────────────────────────────
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -337,9 +381,9 @@ private fun PrestamoItemRow(prestamo: Prestamo) {
         Spacer(modifier = Modifier.width(8.dp))
         Column(horizontalAlignment = Alignment.End) {
             val (label, color, bgColor) = when (prestamo.estado) {
-                EstadoPrestamo.ACTIVO   -> Triple("ACTIVO",   Cobalto,     Cielo)
-                EstadoPrestamo.DEVUELTO -> Triple("DEVUELTO", StatusGreen, StatusGreenBg)
-                EstadoPrestamo.VENCIDO  -> Triple("VENCIDO",  StatusRed,   StatusRedBg)
+                EstadoPrestamo.ACTIVO   -> Triple("PRESTADO",  StatusAmber, StatusAmberBg)
+                EstadoPrestamo.DEVUELTO -> Triple("DEVUELTO",  StatusGreen, StatusGreenBg)
+                EstadoPrestamo.VENCIDO  -> Triple("VENCIDO",   StatusRed,   StatusRedBg)
             }
             StatusChip(label = label, color = color, backgroundColor = bgColor)
             Spacer(modifier = Modifier.height(2.dp))
