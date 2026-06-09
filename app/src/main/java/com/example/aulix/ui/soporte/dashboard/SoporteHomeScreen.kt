@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -47,6 +46,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.aulix.domain.model.EstadoIncidencia
 import com.example.aulix.domain.model.Incidencia
 import com.example.aulix.domain.model.PrioridadIncidencia
@@ -55,6 +57,7 @@ import com.example.aulix.domain.model.UserRole
 import com.example.aulix.ui.components.AulixCard
 import com.example.aulix.ui.components.StatusChip
 import com.example.aulix.ui.components.UserAvatar
+import com.example.aulix.ui.navigation.Route
 import com.example.aulix.ui.theme.Arena
 import com.example.aulix.ui.theme.Cielo
 import com.example.aulix.ui.theme.Cobalto
@@ -73,14 +76,14 @@ import com.example.aulix.ui.theme.Tinta
 @Composable
 fun SoporteHomeScreen(
     user: User,
+    navController: NavHostController,
     onVerDetalle: (String) -> Unit,
     onNuevaIncidencia: () -> Unit,
-    onVerEquipos: () -> Unit,
-    onVerMetricas: () -> Unit,
-    onVerPerfil: () -> Unit,
     viewModel: SoporteHomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
     val ultimaAbierta = state.incidencias.filter { it.estado == EstadoIncidencia.ABIERTA }
         .maxByOrNull { it.fecha + it.horaReporte }
@@ -91,8 +94,11 @@ fun SoporteHomeScreen(
         containerColor = Lienzo,
         bottomBar = {
             NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
+                val isBandeja = currentDestination?.hasRoute(Route.SoporteDashboard::class) == true
+                val isMetricas = currentDestination?.hasRoute(Route.SoporteMetricas::class) == true
+                val isPerfil = currentDestination?.hasRoute(Route.SoportePerfil::class) == true
                 NavigationBarItem(
-                    selected = true,
+                    selected = isBandeja,
                     onClick = {},
                     icon = { Icon(Icons.Default.Home, contentDescription = "Bandeja") },
                     label = { Text("Bandeja", style = MaterialTheme.typography.labelSmall) },
@@ -105,33 +111,38 @@ fun SoporteHomeScreen(
                     )
                 )
                 NavigationBarItem(
-                    selected = false,
-                    onClick = onVerEquipos,
-                    icon = { Icon(Icons.Default.Build, contentDescription = "Equipos") },
-                    label = { Text("Equipos", style = MaterialTheme.typography.labelSmall) },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = Tinta.copy(alpha = 0.4f),
-                        unselectedTextColor = Tinta.copy(alpha = 0.4f),
-                        indicatorColor = Cielo
-                    )
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onVerMetricas,
+                    selected = isMetricas,
+                    onClick = {
+                        navController.navigate(Route.SoporteMetricas) {
+                            popUpTo(Route.SoporteDashboard) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     icon = { Icon(Icons.Default.PieChart, contentDescription = "Métricas") },
                     label = { Text("Métricas", style = MaterialTheme.typography.labelSmall) },
                     colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Cobalto,
+                        selectedTextColor = Cobalto,
                         unselectedIconColor = Tinta.copy(alpha = 0.4f),
                         unselectedTextColor = Tinta.copy(alpha = 0.4f),
                         indicatorColor = Cielo
                     )
                 )
                 NavigationBarItem(
-                    selected = false,
-                    onClick = onVerPerfil,
+                    selected = isPerfil,
+                    onClick = {
+                        navController.navigate(Route.SoportePerfil) {
+                            popUpTo(Route.SoporteDashboard) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
                     label = { Text("Perfil", style = MaterialTheme.typography.labelSmall) },
                     colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Cobalto,
+                        selectedTextColor = Cobalto,
                         unselectedIconColor = Tinta.copy(alpha = 0.4f),
                         unselectedTextColor = Tinta.copy(alpha = 0.4f),
                         indicatorColor = Cielo

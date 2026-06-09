@@ -24,6 +24,7 @@ import com.example.aulix.ui.soporte.incidencias.EquipoHistorialScreen
 import com.example.aulix.ui.soporte.incidencias.IncidenciaDetailScreen
 import com.example.aulix.ui.soporte.incidencias.RegistrarIncidenciaScreen
 import com.example.aulix.ui.soporte.mantenimiento.ProgramarMantenimientoScreen
+import com.example.aulix.ui.soporte.metricas.SoporteMetricasScreen
 import com.example.aulix.ui.soporte.perfil.SoportePerfilScreen
 import kotlinx.serialization.Serializable
 
@@ -62,7 +63,6 @@ sealed interface Route {
     @Serializable data class SoporteHistorialEquipo(val equipoId: String) : Route
     @Serializable object SoporteRegistrarIncidencia : Route
     @Serializable object SoportePerfil : Route
-    @Serializable object SoporteEquipos : Route
     @Serializable object SoporteMetricas : Route
     @Serializable data class SoporteProgramarMantenimiento(val equipoId: String) : Route
 }
@@ -217,11 +217,9 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
             SoporteHomeScreen(
                 user = user,
+                navController = navController,
                 onVerDetalle = { incidenciaId -> navController.navigate(Route.SoporteDetalle(incidenciaId)) },
-                onNuevaIncidencia = { navController.navigate(Route.SoporteRegistrarIncidencia) },
-                onVerEquipos = { navController.navigate(Route.SoporteEquipos) },
-                onVerMetricas = { navController.navigate(Route.SoporteMetricas) },
-                onVerPerfil = { navController.navigate(Route.SoportePerfil) }
+                onNuevaIncidencia = { navController.navigate(Route.SoporteRegistrarIncidencia) }
             )
         }
         composable<Route.SoporteDetalle> {
@@ -268,11 +266,8 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 }
             )
         }
-        composable<Route.SoporteEquipos> {
-            RolePlaceholderScreen(role = "Equipos", initials = "JR", onLogout = {})
-        }
         composable<Route.SoporteMetricas> {
-            RolePlaceholderScreen(role = "Métricas", initials = "JR", onLogout = {})
+            SoporteMetricasScreen(navController = navController)
         }
     }
 }
