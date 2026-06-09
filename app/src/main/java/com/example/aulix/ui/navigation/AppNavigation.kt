@@ -100,12 +100,20 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
 
         // Dashboards — placeholder hasta implementar cada módulo
         composable<Route.DocenteDashboard> {
+            if (UserSession.currentUser == null) {
+                navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
+                return@composable
+            }
             RolePlaceholderScreen(role = "Docente", initials = "CG", onLogout = {
                 UserSession.logout()
                 navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
             })
         }
         composable<Route.EstudianteDashboard> {
+            if (UserSession.currentUser == null) {
+                navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
+                return@composable
+            }
             RolePlaceholderScreen(role = "Estudiante", initials = "MV", onLogout = {
                 UserSession.logout()
                 navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
@@ -189,6 +197,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
         composable<Route.SoporteDashboard> {
+            if (UserSession.currentUser == null) {
+                navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
+                return@composable
+            }
             RolePlaceholderScreen(role = "Soporte Técnico", initials = "JR", onLogout = {
                 UserSession.logout()
                 navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
