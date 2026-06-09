@@ -38,6 +38,8 @@ fun AulixTextField(
     isError: Boolean = false,
     supportingText: String? = null,
     enabled: Boolean = true,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -49,7 +51,8 @@ fun AulixTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            singleLine = true,
+            singleLine = singleLine,
+            minLines = minLines,
             enabled = enabled,
             isError = isError,
             visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,

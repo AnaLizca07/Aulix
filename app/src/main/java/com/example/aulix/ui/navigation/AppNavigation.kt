@@ -19,6 +19,12 @@ import com.example.aulix.ui.auxiliar.perfil.PerfilScreen
 import com.example.aulix.ui.auxiliar.prestamo.CambiarDestinatarioScreen
 import com.example.aulix.ui.auxiliar.prestamo.RegistrarPrestamoScreen
 import com.example.aulix.ui.auxiliar.search.SearchEquipoScreen
+import com.example.aulix.ui.soporte.dashboard.SoporteHomeScreen
+import com.example.aulix.ui.soporte.incidencias.EquipoHistorialScreen
+import com.example.aulix.ui.soporte.incidencias.IncidenciaDetailScreen
+import com.example.aulix.ui.soporte.incidencias.RegistrarIncidenciaScreen
+import com.example.aulix.ui.soporte.mantenimiento.ProgramarMantenimientoScreen
+import com.example.aulix.ui.soporte.perfil.SoportePerfilScreen
 import kotlinx.serialization.Serializable
 
 sealed interface Route {
@@ -52,6 +58,13 @@ sealed interface Route {
 
     // Soporte
     @Serializable object SoporteIncidencias : Route
+    @Serializable data class SoporteDetalle(val incidenciaId: String) : Route
+    @Serializable data class SoporteHistorialEquipo(val equipoId: String) : Route
+    @Serializable object SoporteRegistrarIncidencia : Route
+    @Serializable object SoportePerfil : Route
+    @Serializable object SoporteEquipos : Route
+    @Serializable object SoporteMetricas : Route
+    @Serializable data class SoporteProgramarMantenimiento(val equipoId: String) : Route
 }
 
 @Composable
@@ -197,14 +210,69 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
         composable<Route.SoporteDashboard> {
-            if (UserSession.currentUser == null) {
+            val user = UserSession.currentUser
+            if (user == null) {
                 navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
                 return@composable
             }
-            RolePlaceholderScreen(role = "Soporte Técnico", initials = "JR", onLogout = {
-                UserSession.logout()
-                navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
-            })
+            SoporteHomeScreen(
+                user = user,
+                onVerDetalle = { incidenciaId -> navController.navigate(Route.SoporteDetalle(incidenciaId)) },
+                onNuevaIncidencia = { navController.navigate(Route.SoporteRegistrarIncidencia) },
+                onVerEquipos = { navController.navigate(Route.SoporteEquipos) },
+                onVerMetricas = { navController.navigate(Route.SoporteMetricas) },
+                onVerPerfil = { navController.navigate(Route.SoportePerfil) }
+            )
+        }
+        composable<Route.SoporteDetalle> {
+            val args = it.toRoute<Route.SoporteDetalle>()
+            IncidenciaDetailScreen(
+                incidenciaId = args.incidenciaId,
+                onBack = { navController.popBackStack() },
+                onVerHistorialEquipo = { equipoId -> navController.navigate(Route.SoporteHistorialEquipo(equipoId)) }
+            )
+        }
+        composable<Route.SoporteHistorialEquipo> {
+            val args = it.toRoute<Route.SoporteHistorialEquipo>()
+            EquipoHistorialScreen(
+                equipoId = args.equipoId,
+                onBack = { navController.popBackStack() },
+                onProgramarMantenimiento = {
+                    navController.navigate(Route.SoporteProgramarMantenimiento(args.equipoId))
+                }
+            )
+        }
+        composable<Route.SoporteProgramarMantenimiento> {
+            val args = it.toRoute<Route.SoporteProgramarMantenimiento>()
+            val user = UserSession.currentUser ?: return@composable
+            ProgramarMantenimientoScreen(
+                equipoId = args.equipoId,
+                user = user,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<Route.SoporteRegistrarIncidencia> {
+            val user = UserSession.currentUser ?: return@composable
+            RegistrarIncidenciaScreen(
+                user = user,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<Route.SoportePerfil> {
+            SoportePerfilScreen(
+                user = UserSession.currentUser,
+                onBack = { navController.popBackStack() },
+                onLogout = {
+                    UserSession.logout()
+                    navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
+                }
+            )
+        }
+        composable<Route.SoporteEquipos> {
+            RolePlaceholderScreen(role = "Equipos", initials = "JR", onLogout = {})
+        }
+        composable<Route.SoporteMetricas> {
+            RolePlaceholderScreen(role = "Métricas", initials = "JR", onLogout = {})
         }
     }
 }
