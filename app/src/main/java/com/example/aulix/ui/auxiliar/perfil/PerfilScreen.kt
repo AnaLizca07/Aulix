@@ -50,11 +50,17 @@ fun PerfilScreen(
                         tint = Tinta
                     )
                 }
+                val (eyebrowText, eyebrowColor) = when (user.role) {
+                    UserRole.AUXILIAR        -> "AUXILIAR · LAB-B-204" to RoleAuxiliar
+                    UserRole.DOCENTE         -> "DOCENTE · MIS CURSOS" to RoleDocente
+                    UserRole.ESTUDIANTE      -> "ESTUDIANTE" to RoleEstudiante
+                    UserRole.SOPORTE_TECNICO -> "SOPORTE TÉCNICO" to RoleSoporte
+                }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "AUXILIAR · LAB-B-204",
+                        text = eyebrowText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = RoleAuxiliar,
+                        color = eyebrowColor,
                         letterSpacing = 1.sp
                     )
                     Text(
@@ -112,8 +118,10 @@ fun PerfilScreen(
 
                 AulixCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        InfoRow(label = "Laboratorio", value = "LAB-B-204")
-                        HorizontalDivider(color = BorderLight, thickness = 1.dp)
+                        if (user.role == UserRole.AUXILIAR) {
+                            InfoRow(label = "Laboratorio", value = "LAB-B-204")
+                            HorizontalDivider(color = BorderLight, thickness = 1.dp)
+                        }
                         InfoRow(label = "Programa", value = user.program)
                         HorizontalDivider(color = BorderLight, thickness = 1.dp)
                         InfoRow(label = "Documento", value = user.document)
