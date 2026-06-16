@@ -30,16 +30,17 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.aulix.data.local.FakeIncidenciaDataSource
-import com.example.aulix.data.local.FakePrestamoDataSource
 import com.example.aulix.domain.model.EstadoIncidencia
 import com.example.aulix.domain.model.Incidencia
 import com.example.aulix.ui.components.AulixCard
@@ -60,10 +61,14 @@ import com.example.aulix.ui.theme.Tinta
 fun EquipoHistorialScreen(
     equipoId: String,
     onBack: () -> Unit,
-    onProgramarMantenimiento: () -> Unit = {}
+    onProgramarMantenimiento: () -> Unit = {},
+    viewModel: EquipoHistorialViewModel = hiltViewModel<EquipoHistorialViewModel, EquipoHistorialViewModel.Factory>(
+        creationCallback = { factory -> factory.create(equipoId) }
+    ),
 ) {
-    val equipo = remember(equipoId) { FakePrestamoDataSource.getEquipoById(equipoId) } ?: return
-    val incidencias = remember(equipoId) { FakeIncidenciaDataSource.getIncidenciasPorEquipo(equipoId) }
+    val vmState by viewModel.uiState.collectAsState()
+    val equipo = vmState.equipo ?: return
+    val incidencias = vmState.incidencias
 
     val tieneFallasRepetidas = remember(incidencias) {
         val hace60 = java.util.Calendar.getInstance().apply {

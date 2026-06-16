@@ -30,8 +30,23 @@ fun CerrarSesionScreen(
     onBack: () -> Unit,
     onCerrar: () -> Unit,
 ) {
-    var estado by remember { mutableStateOf(EstadoCierre.CON_INCIDENCIA) }
-    var observaciones by remember { mutableStateOf("Falla intermitente en switch 03 al configurar la VLAN 20. Ticket #2847 abierto con soporte. Práctica continuó con switch 04.") }
+    var estado by remember { mutableStateOf(EstadoCierre.NORMAL) }
+    var observaciones by remember { mutableStateOf("") }
+    val rangoHorario = remember(sesion.horaApertura) {
+        val apertura = sesion.horaApertura?.take(5) ?: "—"
+        val ahora = java.time.LocalTime.now().let { t -> "%02d:%02d".format(t.hour, t.minute) }
+        "$apertura → $ahora"
+    }
+    val duracion = remember(sesion.horaApertura) {
+        val apertura = sesion.horaApertura ?: return@remember "—"
+        runCatching {
+            val hA = apertura.substring(0, 2).toInt()
+            val mA = apertura.substring(3, 5).toInt()
+            val ahora = java.time.LocalTime.now()
+            val diffMin = (ahora.hour * 60 + ahora.minute) - (hA * 60 + mA)
+            if (diffMin < 0) "—" else "%02d:%02d".format(diffMin / 60, diffMin % 60)
+        }.getOrDefault("—")
+    }
 
     Scaffold(
         containerColor = Lienzo,
@@ -57,15 +72,15 @@ fun CerrarSesionScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("DURACIÓN", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 1.sp, modifier = Modifier.weight(1f))
-                        Text("10:03 → 12:00", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f))
+                        Text(rangoHorario, style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f))
                     }
                     Spacer(Modifier.height(4.dp))
-                    Text("01:57:14", style = MaterialTheme.typography.displayLarge, color = Tinta)
+                    Text(duracion, style = MaterialTheme.typography.displayLarge, color = Tinta)
                     Spacer(Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        CierreStat("22/24", "Asistencia", StatusGreen, Modifier.weight(1f))
-                        CierreStat("1", "Incidencia", StatusAmber, Modifier.weight(1f))
-                        CierreStat("5", "Evidencias", Tinta, Modifier.weight(1f))
+                        CierreStat("${sesion.asistentesConfirmados}/${sesion.totalEstudiantes}", "Asistencia", StatusGreen, Modifier.weight(1f))
+                        CierreStat("—", "Incidencias", StatusAmber, Modifier.weight(1f))
+                        CierreStat("—", "Evidencias", Tinta, Modifier.weight(1f))
                     }
                 }
 

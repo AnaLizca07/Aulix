@@ -17,7 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.Equipo
 import com.example.aulix.domain.model.EstadoEquipo
 import com.example.aulix.ui.components.AulixCard
@@ -27,7 +27,7 @@ import com.example.aulix.ui.theme.*
 @Composable
 fun InventarioScreen(
     onBack: () -> Unit,
-    viewModel: InventarioViewModel = viewModel()
+    viewModel: InventarioViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -53,7 +53,7 @@ fun InventarioScreen(
                 }
                 Column {
                     Text(
-                        text = "LAB-B-204",
+                        text = "INVENTARIO",
                         style = MaterialTheme.typography.labelSmall,
                         color = Cobre,
                         letterSpacing = 1.sp
@@ -216,9 +216,10 @@ private fun EquipoInventarioRow(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 val (label, color, bgColor) = when (equipo.estado) {
-                    EstadoEquipo.DISPONIBLE -> Triple("DISPONIBLE", StatusGreen, StatusGreenBg)
-                    EstadoEquipo.PRESTADO   -> Triple("PRESTADO",   StatusAmber, StatusAmberBg)
-                    EstadoEquipo.REPARACION -> Triple("REPARACIÓN", StatusRed,   StatusRedBg)
+                    EstadoEquipo.DISPONIBLE        -> Triple("DISPONIBLE",  StatusGreen, StatusGreenBg)
+                    EstadoEquipo.PRESTADO          -> Triple("PRESTADO",    StatusAmber, StatusAmberBg)
+                    EstadoEquipo.REPARACION        -> Triple("REPARACIÓN",  StatusRed,   StatusRedBg)
+                    EstadoEquipo.FUERA_DE_SERVICIO -> Triple("FUERA SERV.", StatusRed,   StatusRedBg)
                 }
                 StatusChip(label = label, color = color, backgroundColor = bgColor)
             }

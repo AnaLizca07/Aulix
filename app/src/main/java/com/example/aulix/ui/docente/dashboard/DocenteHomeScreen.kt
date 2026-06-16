@@ -10,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.QrCode2
@@ -27,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.aulix.domain.model.EstadoSesion
 import com.example.aulix.domain.model.User
 import com.example.aulix.domain.model.UserRole
 import com.example.aulix.ui.components.UserAvatar
@@ -50,6 +50,14 @@ fun DocenteHomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val sesion = state.sesion
+
+    LaunchedEffect(Unit) { viewModel.cargarDatos() }
+    val fechaHoyLabel = remember {
+        val hoy = java.time.LocalDate.now()
+        val diaNombre = hoy.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale("es", "CO")).uppercase()
+        val mesNombre = hoy.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("es", "CO")).uppercase()
+        "$diaNombre ${hoy.dayOfMonth} · $mesNombre ${hoy.year}"
+    }
 
     Scaffold(
         containerColor = Lienzo,
@@ -82,7 +90,7 @@ fun DocenteHomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = "JUEVES 22 · MAY 2026",
+                        text = fechaHoyLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = Tinta.copy(alpha = 0.45f),
                         letterSpacing = 1.sp,
@@ -106,8 +114,19 @@ fun DocenteHomeScreen(
                     color = Tinta.copy(alpha = 0.55f),
                 )
                 Spacer(Modifier.height(4.dp))
+                val practicasHoy = state.agenda.count { ev ->
+                    runCatching {
+                        val fecha = java.time.LocalDate.parse(ev.dia)
+                        fecha == java.time.LocalDate.now()
+                    }.getOrDefault(ev.dia.contains("HOY"))
+                }
+                val practicasHoyText = when (practicasHoy) {
+                    0    -> "Sin prácticas\nprogramadas hoy."
+                    1    -> "Tienes 1 práctica\nprogramada hoy."
+                    else -> "Tienes $practicasHoy prácticas\nprogramadas hoy."
+                }
                 Text(
-                    text = "Tienes 1 práctica\nprogramada hoy.",
+                    text = practicasHoyText,
                     style = MaterialTheme.typography.displayLarge,
                     color = Tinta,
                     lineHeight = 40.sp,
@@ -115,95 +134,125 @@ fun DocenteHomeScreen(
 
                 Spacer(Modifier.height(20.dp))
 
-                // ── Card de próxima práctica ──────────────────────────────────
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Cobalto)
-                        .padding(20.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "PRÓXIMA · EN ${sesion.minutosRestantes} MIN",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.7f),
-                            letterSpacing = 1.sp,
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White.copy(alpha = 0.15f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
-                        ) {
-                            Text(
-                                text = sesion.rangoHorario,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
-                            )
+                if (sesion != null) {
+                    val sesionActiva = sesion.estado == EstadoSesion.ACTIVA
+
+                    // ── Card de sesión ────────────────────────────────────────────
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Cobalto)
+                            .padding(20.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.White.copy(alpha = 0.15f))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                            ) {
+                                Text(
+                                    text = sesion.rangoHorario,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                )
+                            }
+                            if (sesionActiva) {
+                                Spacer(Modifier.width(8.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(StatusGreen.copy(alpha = 0.25f))
+                                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(StatusGreen))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("EN CURSO", style = MaterialTheme.typography.labelSmall, color = StatusGreen)
+                                }
+                            }
                         }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    Text(sesion.titulo, style = MaterialTheme.typography.headlineMedium, color = Color.White)
-                    Text(
-                        sesion.asignaturaGrupo,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f),
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.LocationOn, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(sesion.laboratorio, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
-                        Spacer(Modifier.width(16.dp))
-                        Icon(Icons.Default.People, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("${sesion.totalEstudiantes} estudiantes", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(sesion.titulo, style = MaterialTheme.typography.headlineMedium, color = Color.White)
+                        Text(
+                            sesion.asignaturaGrupo,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.8f),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.LocationOn, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(sesion.laboratorio, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
+                        }
+                        Spacer(Modifier.height(16.dp))
                         Surface(
-                            onClick = onAbrirSesion,
+                            onClick = if (sesionActiva) onGenerarQr else onAbrirSesion,
                             shape = RoundedCornerShape(50.dp),
                             color = Color.White,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Box(modifier = Modifier.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
-                                Text("Abrir sesión  →", style = MaterialTheme.typography.titleMedium, color = Cobalto, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                        Spacer(Modifier.width(10.dp))
-                        Box(
-                            modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Default.MoreHoriz, "Más", tint = Color.White)
+                                Text(
+                                    if (sesionActiva) "Ver QR de asistencia  →" else "Abrir sesión  →",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Cobalto,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
                             }
                         }
                     }
-                }
 
-                Spacer(Modifier.height(24.dp))
-
-                Text(
-                    text = "ACCESOS RÁPIDOS",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Tinta.copy(alpha = 0.45f),
-                    letterSpacing = 1.sp,
-                )
-                Spacer(Modifier.height(12.dp))
-
-                // ── Grid 2x2 de accesos rápidos ───────────────────────────────
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    QuickAccess("Generar QR", Icons.Default.QrCode2, Cobalto, Modifier.weight(1f), onGenerarQr)
-                    QuickAccess("Código tiempo", Icons.Default.Schedule, Cobalto, Modifier.weight(1f), onCodigoTiempo)
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    QuickAccess("Reportar incidencia", Icons.Default.WarningAmber, Cobre, Modifier.weight(1f), onReportarIncidencia)
-                    QuickAccess("Evidencias", Icons.Default.CameraAlt, StatusGreen, Modifier.weight(1f), onEvidencias)
+                    // Accesos rápidos solo cuando la sesión está activa
+                    if (sesionActiva) {
+                        Spacer(Modifier.height(24.dp))
+                        Text(
+                            text = "ACCESOS RÁPIDOS",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Tinta.copy(alpha = 0.45f),
+                            letterSpacing = 1.sp,
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            QuickAccess("Generar QR", Icons.Default.QrCode2, Cobalto, Modifier.weight(1f), onGenerarQr)
+                            QuickAccess("Código tiempo", Icons.Default.Schedule, Cobalto, Modifier.weight(1f), onCodigoTiempo)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            QuickAccess("Reportar incidencia", Icons.Default.WarningAmber, Cobre, Modifier.weight(1f), onReportarIncidencia)
+                            QuickAccess("Evidencias", Icons.Default.CameraAlt, StatusGreen, Modifier.weight(1f), onEvidencias)
+                        }
+                    }
+                } else {
+                    // ── Estado vacío ──────────────────────────────────────────────
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Arena)
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Tinta.copy(alpha = 0.25f),
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = "Sin sesiones programadas",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Tinta.copy(alpha = 0.5f),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Crea una clase desde la Agenda",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Tinta.copy(alpha = 0.35f),
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(20.dp))

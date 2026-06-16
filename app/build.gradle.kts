@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt.android)
     kotlin("kapt")
+}
+
+// Lee local.properties para inyectar las credenciales de Supabase en BuildConfig.
+// NUNCA subas local.properties al repositorio.
+val localProps = Properties().also { props ->
+    val f = rootProject.file("local.properties")
+    if (f.exists()) props.load(f.inputStream())
 }
 
 android {
@@ -19,6 +28,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SUPABASE_URL",      "\"${localProps.getProperty("supabase.url", "")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProps.getProperty("supabase.anon_key", "")}\"")
     }
 
     buildTypes {
@@ -39,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         jniLibs {
@@ -94,11 +107,21 @@ dependencies {
     // QR — ML Kit
     implementation(libs.mlkit.barcode.scanning)
 
+    // QR — ZXing (generación de códigos QR)
+    implementation("com.google.zxing:core:3.5.3")
+
     // Imágenes — Coil
     implementation(libs.coil.compose)
 
     // Fuentes Google
     implementation(libs.compose.ui.google.fonts)
+
+    // Supabase
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.storage)
+    implementation(libs.ktor.client.okhttp)
 
     // Tests
     testImplementation(libs.junit)

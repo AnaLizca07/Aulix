@@ -1,31 +1,45 @@
 package com.example.aulix.domain.model
 
-// Sesión de práctica de laboratorio. Modelo compartido por Docente y Estudiante.
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+
+@Serializable
 data class Sesion(
-    val id: String,
-    val titulo: String,          // "Configuración VLAN"
-    val asignatura: String,      // "Programación de Redes"
-    val grupo: String,           // "21A"
-    val laboratorio: String,     // "Lab-B-204"
-    val edificio: String = "",   // "Edificio B, P2"
-    val horaInicio: String,      // "10:00"
-    val horaFin: String,         // "12:00"
-    val totalEstudiantes: Int,   // 24
-    val auxiliar: String = "",   // "D. Marín (asignado)"
-    val practica: String = "",   // "Configuración inicial de VLAN trunk"
-    val capacidad: String = "",  // "24 puestos · 18 equipos"
+    val id: String = "",
+    @SerialName("reserva_id")        val reservaId: String = "",
+    @SerialName("docente_id")        val docenteId: String = "",
+    @SerialName("codigo_asistencia") val codigoAsistencia: String = "000000",
+    @SerialName("hora_apertura")     val horaApertura: String? = null,
+    @SerialName("hora_cierre")       val horaCierre: String? = null,
+    val observaciones: String? = null,
     val estado: EstadoSesion = EstadoSesion.PROGRAMADA,
-    val asistentesConfirmados: Int = 0,
-    val codigoAsistencia: String = "479231",
-    val minutosRestantes: Int = 23,
+    // SELECT sesion(*, reserva(titulo, practica, grupo, hora_inicio, hora_fin, fecha,
+    //   color_hex, asignatura(id, nombre, codigo), laboratorio(id, nombre, ubicacion)))
+    val reserva: ReservaEmbedida? = null,
+    // Campos calculados post-carga por el repositorio
+    @Transient val asistentesConfirmados: Int = 0,
+    @Transient val minutosRestantes: Int = 23,
+    @Transient val totalEstudiantes: Int = 0,
+    @Transient val auxiliar: String = "",
+    @Transient val capacidad: String = "",
 ) {
-    val rangoHorario: String get() = "$horaInicio → $horaFin"
+    // Propiedades que la UI accede directamente — delegadas al objeto reserva embebido
+    val titulo: String      get() = reserva?.titulo ?: ""
+    val asignatura: String  get() = reserva?.asignatura?.nombre ?: ""
+    val grupo: String       get() = reserva?.grupo ?: ""
+    val laboratorio: String get() = reserva?.laboratorio?.nombre ?: ""
+    val edificio: String    get() = reserva?.laboratorio?.ubicacion ?: ""
+    val horaInicio: String  get() = reserva?.horaInicio?.take(5) ?: ""
+    val horaFin: String     get() = reserva?.horaFin?.take(5) ?: ""
+    val practica: String    get() = reserva?.practica ?: ""
+
+    val rangoHorario: String    get() = "$horaInicio → $horaFin"
     val asignaturaGrupo: String get() = "$asignatura · Grupo $grupo"
 }
 
-// Asistente que confirmó presencia en una sesión activa.
 data class Asistente(
-    val nombre: String,          // "Marín, Diego"
-    val hora: String,            // "10:04"
+    val nombre: String,
+    val hora: String,
     val esNuevo: Boolean = false,
 )

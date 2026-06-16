@@ -27,6 +27,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -38,11 +39,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.aulix.data.local.FakeIncidenciaDataSource
-import com.example.aulix.data.local.FakePrestamoDataSource
 import com.example.aulix.domain.model.EstadoEquipo
 import com.example.aulix.domain.model.EstadoIncidencia
 import com.example.aulix.domain.model.PrioridadIncidencia
@@ -59,12 +59,16 @@ import com.example.aulix.ui.theme.StatusRed
 import com.example.aulix.ui.theme.Tinta
 
 @Composable
-fun SoporteMetricasScreen(navController: NavHostController) {
+fun SoporteMetricasScreen(
+    navController: NavHostController,
+    viewModel: SoporteMetricasViewModel = hiltViewModel(),
+) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val vmState by viewModel.uiState.collectAsState()
 
-    val incidencias = remember { FakeIncidenciaDataSource.getIncidencias() }
-    val equipos = remember { FakePrestamoDataSource.getEquipos() }
+    val incidencias = vmState.incidencias
+    val equipos = vmState.equipos
 
     val cal = remember { java.util.Calendar.getInstance() }
     val mesActual = remember {

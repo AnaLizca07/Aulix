@@ -37,7 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,8 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.aulix.data.local.FakePrestamoDataSource
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.TipoMantenimiento
 import com.example.aulix.domain.model.User
 import com.example.aulix.ui.components.AulixButton
@@ -86,12 +84,12 @@ fun ProgramarMantenimientoScreen(
     equipoId: String,
     user: User,
     onBack: () -> Unit,
-    viewModel: ProgramarMantenimientoViewModel = viewModel(
-        factory = ProgramarMantenimientoViewModel.factory(equipoId)
+    viewModel: ProgramarMantenimientoViewModel = hiltViewModel<ProgramarMantenimientoViewModel, ProgramarMantenimientoViewModel.Factory>(
+        creationCallback = { factory -> factory.create(equipoId) }
     )
 ) {
     val state by viewModel.uiState.collectAsState()
-    val equipo = remember(equipoId) { FakePrestamoDataSource.getEquipoById(equipoId) }
+    val equipo = state.equipo
 
     val formValido = state.fechaProgramada.isNotBlank()
         && state.horaProgramada.isNotBlank()
@@ -182,9 +180,9 @@ fun ProgramarMantenimientoScreen(
                             )
                             HorizontalDivider(color = BorderLight, thickness = 1.dp)
                             ResumenRow(label = "Técnico", value = mnt.tecnicoAsignado)
-                            if (mnt.observaciones.isNotBlank()) {
+                            if (!mnt.observaciones.isNullOrBlank()) {
                                 HorizontalDivider(color = BorderLight, thickness = 1.dp)
-                                ResumenRow(label = "Notas", value = mnt.observaciones)
+                                ResumenRow(label = "Notas", value = mnt.observaciones ?: "")
                             }
                         }
                     }

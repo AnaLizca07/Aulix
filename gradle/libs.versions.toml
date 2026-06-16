@@ -1,5 +1,7 @@
 [versions]
 agp = "8.12.3"
+supabase = "3.1.4"
+ktor = "3.0.3"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -90,6 +92,13 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 
 # Fuentes Google
 compose-ui-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "googleFonts" }
+
+# Supabase
+supabase-bom       = { group = "io.github.jan-tennert.supabase", name = "bom",          version.ref = "supabase" }
+supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt" }
+supabase-auth      = { group = "io.github.jan-tennert.supabase", name = "auth-kt"      }
+supabase-storage   = { group = "io.github.jan-tennert.supabase", name = "storage-kt"   }
+ktor-client-okhttp = { group = "io.ktor",                        name = "ktor-client-okhttp", version.ref = "ktor" }
 
 # Tests
 junit = { group = "junit", name = "junit", version.ref = "junit" }

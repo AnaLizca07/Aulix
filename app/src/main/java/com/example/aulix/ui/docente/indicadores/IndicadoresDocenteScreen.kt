@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.User
 import com.example.aulix.domain.model.UserRole
 import com.example.aulix.ui.components.AulixCard
@@ -35,7 +36,9 @@ fun IndicadoresDocenteScreen(
     onHoy: () -> Unit,
     onAgenda: () -> Unit,
     onPerfil: () -> Unit,
+    viewModel: DocenteIndicadoresViewModel = hiltViewModel(),
 ) {
+    val indicState by viewModel.uiState.collectAsState()
     var periodo by remember { mutableStateOf("Mes") }
 
     Scaffold(
@@ -85,9 +88,9 @@ fun IndicadoresDocenteScreen(
 
                 // 3 KPIs
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    KpiCard("88%", "Asistencia promedio", StatusGreen, "▲ 3 vs. abril", Modifier.weight(1f))
-                    KpiCard("24", "Sesiones dictadas", Tinta, null, Modifier.weight(1f))
-                    KpiCard("3", "Inasist. críticas", StatusRed, null, Modifier.weight(1f))
+                    KpiCard(indicState.asistenciaPromedio, "Asistencia promedio", StatusGreen, null, Modifier.weight(1f))
+                    KpiCard(indicState.sesionesTotales.toString(), "Sesiones dictadas", Tinta, null, Modifier.weight(1f))
+                    KpiCard("—", "Inasist. críticas", StatusRed, null, Modifier.weight(1f))
                 }
 
                 Spacer(Modifier.height(24.dp))
@@ -98,52 +101,62 @@ fun IndicadoresDocenteScreen(
                 }
                 Spacer(Modifier.height(10.dp))
                 AulixCard {
-                    val barras = listOf(
-                        BarraAsignatura("Redes y Telecom.", 91, StatusGreen),
-                        BarraAsignatura("Bases de Datos II", 84, Cobalto),
-                        BarraAsignatura("Programación Móvil", 78, Cobre),
-                        BarraAsignatura("Arquitectura", 69, Cobre),
-                    )
-                    barras.forEachIndexed { i, b ->
-                        if (i > 0) Spacer(Modifier.height(12.dp))
-                        BarraRow(b)
+                    if (indicState.asistenciaPorAsignatura.isEmpty()) {
+                        Text(
+                            "Sin datos de asistencia aún",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Tinta.copy(alpha = 0.4f),
+                            modifier = Modifier.padding(vertical = 8.dp),
+                        )
+                    } else {
+                        val colores = listOf(StatusGreen, Cobalto, Cobre, StatusAmber)
+                        indicState.asistenciaPorAsignatura.forEachIndexed { i, asig ->
+                            if (i > 0) Spacer(Modifier.height(12.dp))
+                            BarraRow(BarraAsignatura(asig.nombre, asig.tasa, colores[i % colores.size]))
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(24.dp))
 
+                val totalReservas = indicState.sesionesTotales
                 Row {
-                    Text("MIS RESERVAS · POR ESTADO", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 0.5.sp, modifier = Modifier.weight(1f))
-                    Text("23 SOLICITADAS", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 0.5.sp)
+                    Text("MIS SESIONES · POR ESTADO", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 0.5.sp, modifier = Modifier.weight(1f))
+                    Text("$totalReservas TOTAL", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 0.5.sp)
                 }
                 Spacer(Modifier.height(10.dp))
                 AulixCard {
-                    Row(modifier = Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp))) {
-                        Box(modifier = Modifier.weight(18f).fillMaxHeight().background(StatusGreen))
-                        Box(modifier = Modifier.weight(3f).fillMaxHeight().background(Cobre))
-                        Box(modifier = Modifier.weight(2f).fillMaxHeight().background(StatusRed))
+                    if (totalReservas > 0) {
+                        Row(modifier = Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp))) {
+                            if (indicState.sesionesCompletadas > 0)
+                                Box(modifier = Modifier.weight(indicState.sesionesCompletadas.toFloat()).fillMaxHeight().background(StatusGreen))
+                            if (indicState.sesionesPendientes > 0)
+                                Box(modifier = Modifier.weight(indicState.sesionesPendientes.toFloat()).fillMaxHeight().background(Cobre))
+                            if (indicState.sesionesCanceladas > 0)
+                                Box(modifier = Modifier.weight(indicState.sesionesCanceladas.toFloat()).fillMaxHeight().background(StatusRed))
+                        }
+                        Spacer(Modifier.height(12.dp))
                     }
-                    Spacer(Modifier.height(12.dp))
                     Row {
-                        LeyendaPunto("Completadas 18", StatusGreen)
+                        LeyendaPunto("Completadas ${indicState.sesionesCompletadas}", StatusGreen)
                         Spacer(Modifier.width(16.dp))
-                        LeyendaPunto("Pendientes 3", Cobre)
+                        LeyendaPunto("Pendientes ${indicState.sesionesPendientes}", Cobre)
                     }
                     Spacer(Modifier.height(6.dp))
-                    LeyendaPunto("Canceladas 2", StatusRed)
+                    LeyendaPunto("Canceladas ${indicState.sesionesCanceladas}", StatusRed)
                 }
 
                 Spacer(Modifier.height(24.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("INASISTENCIAS CRÍTICAS", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 0.5.sp, modifier = Modifier.weight(1f))
-                    Text("Ver todo →", style = MaterialTheme.typography.labelMedium, color = Cobalto)
-                }
+                Text("INASISTENCIAS CRÍTICAS", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 0.5.sp)
                 Spacer(Modifier.height(8.dp))
                 AulixCard {
-                    InasistenciaRow("Jiménez, Mateo", "Arquitectura · 4 faltas seguidas")
-                    HorizontalDivider(color = Tinta.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
-                    InasistenciaRow("Ramírez, Sofía", "Programación Móvil · 3 faltas")
+                    Text(
+                        "Datos no disponibles aún",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Tinta.copy(alpha = 0.4f),
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
                 }
 
                 Spacer(Modifier.height(16.dp))

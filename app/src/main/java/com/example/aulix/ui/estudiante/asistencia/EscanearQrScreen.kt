@@ -1,5 +1,9 @@
 package com.example.aulix.ui.estudiante.asistencia
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,25 +14,39 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.aulix.ui.theme.*
 
-// ── HU 10 · Escanear el QR del docente (siempre pantalla oscura) ───────────────
+// ── HU 10 · Escanear el QR del docente ────────────────────────────────────────
 @Composable
 fun EscanearQrScreen(
+    expectedCode: String,
     onClose: () -> Unit,
     onUsarCodigo: () -> Unit,
     onDetectado: () -> Unit,
 ) {
+    val context = LocalContext.current
+    var tienePermiso by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        tienePermiso = granted
+    }
+
     Scaffold(containerColor = TintaDark) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -50,15 +68,34 @@ fun EscanearQrScreen(
 
                 Spacer(Modifier.weight(1f))
 
-                // Visor
+                // Visor / cámara
                 Box(
                     modifier = Modifier.align(Alignment.CenterHorizontally).size(240.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // Marco con esquinas
-                    Box(
-                        modifier = Modifier.fillMaxSize().border(2.dp, Cobre, RoundedCornerShape(20.dp)),
-                    )
+                    if (tienePermiso) {
+                        CameraQrScanner(
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)),
+                            onDetectado = { scanned ->
+                                if (expectedCode.isBlank() || scanned == expectedCode) {
+                                    onDetectado()
+                                }
+                            },
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).background(SurfaceDark),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.PhotoCamera, null, tint = TextMutedDark, modifier = Modifier.size(36.dp))
+                                Spacer(Modifier.height(8.dp))
+                                Text("Sin permiso de cámara", style = MaterialTheme.typography.labelSmall, color = TextMutedDark, textAlign = TextAlign.Center)
+                            }
+                        }
+                    }
+                    // Marco decorativo encima
+                    Box(modifier = Modifier.fillMaxSize().border(2.dp, Cobre, RoundedCornerShape(20.dp)))
                     Box(modifier = Modifier.fillMaxWidth(0.6f).height(2.dp).background(Cobre.copy(alpha = 0.8f)))
                 }
 
@@ -88,13 +125,20 @@ fun EscanearQrScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     DarkPill("Usar código", Icons.Default.Schedule, onUsarCodigo)
-                    // Botón de captura (simula detección del QR)
-                    Box(
-                        modifier = Modifier.size(64.dp).clip(CircleShape).background(Cobre)
-                            .border(4.dp, Color.White.copy(alpha = 0.3f), CircleShape)
-                            .clickable(onClick = onDetectado),
-                    )
-                    DarkPill("Foto", Icons.Default.Image) {}
+                    if (!tienePermiso) {
+                        // Botón para solicitar permiso
+                        Box(
+                            modifier = Modifier.size(64.dp).clip(CircleShape).background(Cobre)
+                                .border(4.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                                .clickable { launcher.launch(Manifest.permission.CAMERA) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Default.PhotoCamera, "Permitir cámara", tint = Color.White, modifier = Modifier.size(28.dp))
+                        }
+                    } else {
+                        Box(modifier = Modifier.size(64.dp))
+                    }
+                    DarkPill("Galería", Icons.Default.Image) {}
                 }
             }
         }

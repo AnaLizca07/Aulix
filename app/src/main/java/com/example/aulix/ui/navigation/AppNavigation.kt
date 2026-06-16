@@ -1,14 +1,17 @@
 package com.example.aulix.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.example.aulix.domain.model.Sesion
 import com.example.aulix.domain.model.UserRole
 import com.example.aulix.domain.session.UserSession
 import com.example.aulix.ui.auth.AuthViewModel
@@ -40,8 +43,6 @@ import com.example.aulix.ui.estudiante.asistencia.EscanearQrScreen
 import com.example.aulix.ui.estudiante.asistencia.IngresarCodigoScreen
 import com.example.aulix.ui.estudiante.dashboard.EstudianteHomeScreen
 import com.example.aulix.ui.estudiante.historial.EstudianteHistorialScreen
-import com.example.aulix.data.local.FakeDocenteDataSource
-import com.example.aulix.data.local.FakeEstudianteDataSource as EstDs
 import com.example.aulix.ui.soporte.dashboard.SoporteHomeScreen
 import com.example.aulix.ui.soporte.incidencias.EquipoHistorialScreen
 import com.example.aulix.ui.soporte.incidencias.IncidenciaDetailScreen
@@ -49,6 +50,17 @@ import com.example.aulix.ui.soporte.incidencias.RegistrarIncidenciaScreen
 import com.example.aulix.ui.soporte.mantenimiento.ProgramarMantenimientoScreen
 import com.example.aulix.ui.soporte.metricas.SoporteMetricasScreen
 import com.example.aulix.ui.soporte.perfil.SoportePerfilScreen
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 
 sealed interface Route {
@@ -103,11 +115,11 @@ sealed interface Route {
 
 @Composable
 fun AppNavigation(navController: NavHostController = rememberNavController()) {
-    val authViewModel: AuthViewModel = viewModel()
+    val authViewModel: AuthViewModel = hiltViewModel()
     // ViewModels compartidos por rol: una sola instancia para que los cambios
     // (abrir/cerrar sesión, editar agenda) se reflejen entre pantallas.
-    val docenteVm: DocenteViewModel = viewModel()
-    val estudianteVm: EstudianteViewModel = viewModel()
+    val docenteVm: DocenteViewModel = hiltViewModel()
+    val estudianteVm: EstudianteViewModel = hiltViewModel()
 
     NavHost(navController = navController, startDestination = Route.Login) {
 
@@ -167,19 +179,21 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         composable<Route.DocenteSesion> {
+            val state by docenteVm.uiState.collectAsState()
             DetalleSesionScreen(
-                sesion = FakeDocenteDataSource.getSesionActual(),
+                sesion = state.sesion ?: Sesion(),
                 onBack = { navController.popBackStack() },
                 onAbrir = { navController.navigate(Route.DocenteConfirmarApertura) },
             )
         }
 
         composable<Route.DocenteConfirmarApertura> {
+            val state by docenteVm.uiState.collectAsState()
             ConfirmarAperturaScreen(
-                sesion = FakeDocenteDataSource.getSesionActual(),
+                sesion = state.sesion ?: Sesion(),
                 onBack = { navController.popBackStack() },
                 onConfirmar = {
-                    docenteVm.abrirSesion("10:03")
+                    docenteVm.abrirSesion()
                     navController.navigate(Route.DocenteAsistencia) {
                         popUpTo(Route.DocenteDashboard)
                     }
@@ -188,44 +202,53 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         composable<Route.DocenteAsistencia> {
+            val state by docenteVm.uiState.collectAsState()
             AsistenciaQrScreen(
-                sesion = FakeDocenteDataSource.getSesionActual(),
-                asistentes = FakeDocenteDataSource.getAsistentesRecientes(),
+                sesion = state.sesion ?: Sesion(),
+                asistentes = state.asistentes,
+                timerSegundos = state.qrTimerSegundos,
                 onBack = { navController.popBackStack() },
                 onUsarCodigo = { navController.navigate(Route.DocenteCodigoTiempo) },
+                onRenovar = { docenteVm.renovarQr() },
                 onCerrarAsistencia = { navController.navigate(Route.DocenteCerrarSesion) },
             )
         }
 
         composable<Route.DocenteCodigoTiempo> {
+            val state by docenteVm.uiState.collectAsState()
             CodigoTiempoScreen(
-                sesion = FakeDocenteDataSource.getSesionActual(),
-                asistentes = FakeDocenteDataSource.getAsistentesRecientes(),
+                sesion = state.sesion ?: Sesion(),
+                asistentes = state.asistentes,
+                timerSegundos = state.qrTimerSegundos,
                 onBack = { navController.popBackStack() },
+                onRenovar = { docenteVm.renovarQr() },
                 onVolverQr = { navController.popBackStack() },
             )
         }
 
         composable<Route.DocenteIncidencias> {
+            val state by docenteVm.uiState.collectAsState()
             ReportarIncidenciaScreen(
-                sesion = FakeDocenteDataSource.getSesionActual(),
+                sesion = state.sesion ?: Sesion(),
                 onClose = { navController.popBackStack() },
                 onEnviar = { navController.popBackStack() },
             )
         }
 
         composable<Route.DocenteEvidencias> {
+            val state by docenteVm.uiState.collectAsState()
             EvidenciasScreen(
-                sesion = FakeDocenteDataSource.getSesionActual(),
-                evidencias = FakeDocenteDataSource.getEvidencias(),
+                sesion = state.sesion ?: Sesion(),
+                evidencias = state.evidencias,
                 onBack = { navController.popBackStack() },
                 onCapturar = {},
             )
         }
 
         composable<Route.DocenteCerrarSesion> {
+            val state by docenteVm.uiState.collectAsState()
             CerrarSesionScreen(
-                sesion = FakeDocenteDataSource.getSesionActual(),
+                sesion = state.sesion ?: Sesion(),
                 onBack = { navController.popBackStack() },
                 onCerrar = {
                     docenteVm.cerrarSesion()
@@ -238,22 +261,36 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
 
         composable<Route.DocenteAgenda> {
             val state by docenteVm.uiState.collectAsState()
-            AgendaScreen(
-                eventos = state.agenda,
-                laboratorios = FakeDocenteDataSource.getLaboratorios(),
-                onHoy = { navController.navigate(Route.DocenteDashboard) { popUpTo(Route.DocenteDashboard) { inclusive = true } } },
-                onIndicadores = { navController.navigate(Route.DocenteIndicadores) },
-                onPerfil = { navController.navigate(Route.DocentePerfil) },
-                onNuevaClase = { navController.navigate(Route.DocenteEditarClase()) },
-                onEditarClase = { id -> navController.navigate(Route.DocenteEditarClase(id)) },
-            )
+            val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+            androidx.compose.runtime.LaunchedEffect(state.error) {
+                state.error?.let {
+                    snackbarHostState.showSnackbar(it)
+                    docenteVm.clearError()
+                }
+            }
+            androidx.compose.material3.Scaffold(
+                snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            ) { _ ->
+                AgendaScreen(
+                    eventos = state.agenda,
+                    laboratorios = state.laboratorios.map { it.nombre },
+                    onHoy = { navController.navigate(Route.DocenteDashboard) { popUpTo(Route.DocenteDashboard) { inclusive = true } } },
+                    onIndicadores = { navController.navigate(Route.DocenteIndicadores) },
+                    onPerfil = { navController.navigate(Route.DocentePerfil) },
+                    onNuevaClase = { navController.navigate(Route.DocenteEditarClase()) },
+                    onEditarClase = { id -> navController.navigate(Route.DocenteEditarClase(id)) },
+                )
+            }
         }
 
         composable<Route.DocenteEditarClase> {
             val args = it.toRoute<Route.DocenteEditarClase>()
+            val state by docenteVm.uiState.collectAsState()
             EditarClaseScreen(
-                evento = args.eventoId?.let { id -> FakeDocenteDataSource.getEventoById(id) },
-                laboratorios = FakeDocenteDataSource.getLaboratorios(),
+                evento = args.eventoId?.let { id -> state.agenda.find { e -> e.id == id } },
+                asignaturas = state.asignaturas,
+                laboratorios = state.laboratorios,
                 defaultColorHex = 0xFF2C5BA8,
                 onBack = { navController.popBackStack() },
                 onGuardar = { evento ->
@@ -278,6 +315,8 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 user = UserSession.currentUser,
                 onBack = { navController.popBackStack() },
                 onLogout = {
+                    authViewModel.resetLoginState()
+                    authViewModel.resetRegisterState()
                     UserSession.logout()
                     navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
                 },
@@ -302,7 +341,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             val state by estudianteVm.uiState.collectAsState()
             EstudianteAgendaScreen(
                 eventos = state.agenda,
-                laboratorios = EstDs.getLaboratorios(),
+                laboratorios = emptyList(),
                 onHoy = { navController.navigate(Route.EstudianteDashboard) { popUpTo(Route.EstudianteDashboard) { inclusive = true } } },
                 onHistorial = { navController.navigate(Route.EstudianteHistorial) },
                 onPerfil = { navController.navigate(Route.EstudiantePerfil) },
@@ -313,7 +352,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             val state by estudianteVm.uiState.collectAsState()
             EstudianteHistorialScreen(
                 historial = state.historial,
-                resumen = EstDs.getResumenHistorial(),
+                resumen = state.resumen,
                 onHoy = { navController.navigate(Route.EstudianteDashboard) { popUpTo(Route.EstudianteDashboard) { inclusive = true } } },
                 onAgenda = { navController.navigate(Route.EstudianteAgenda) },
                 onPerfil = { navController.navigate(Route.EstudiantePerfil) },
@@ -321,35 +360,78 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         composable<Route.EstudianteEscanearQr> {
+            val state by estudianteVm.uiState.collectAsState()
             EscanearQrScreen(
+                expectedCode = state.sesionActiva?.codigoAsistencia ?: "",
                 onClose = { navController.popBackStack() },
                 onUsarCodigo = { navController.navigate(Route.EstudianteIngresarCodigo) },
-                onDetectado = { navController.navigate(Route.EstudianteConfirmacion) },
+                onDetectado = {
+                    val sesionId = state.sesionActiva?.id ?: ""
+                    estudianteVm.registrarAsistencia(sesionId, "qr")
+                    navController.navigate(Route.EstudianteConfirmacion)
+                },
             )
         }
 
         composable<Route.EstudianteIngresarCodigo> {
+            val state by estudianteVm.uiState.collectAsState()
             IngresarCodigoScreen(
-                sesion = EstDs.getSesionActiva(),
+                sesion = state.sesionActiva ?: Sesion(),
                 onBack = { navController.popBackStack() },
-                onConfirmar = { navController.navigate(Route.EstudianteConfirmacion) },
+                onConfirmar = {
+                    val sesionId = state.sesionActiva?.id ?: ""
+                    estudianteVm.registrarAsistencia(sesionId, "codigo")
+                    navController.navigate(Route.EstudianteConfirmacion)
+                },
             )
         }
 
         composable<Route.EstudianteConfirmacion> {
-            ConfirmacionAsistenciaScreen(
-                comprobante = EstDs.registrarAsistencia(),
-                onGuardar = {
-                    navController.navigate(Route.EstudianteDashboard) {
-                        popUpTo(Route.EstudianteDashboard) { inclusive = true }
+            val state by estudianteVm.uiState.collectAsState()
+            val comprobante = state.comprobanteReciente
+            when {
+                comprobante != null -> ConfirmacionAsistenciaScreen(
+                    comprobante = comprobante,
+                    onGuardar = {
+                        navController.navigate(Route.EstudianteDashboard) {
+                            popUpTo(Route.EstudianteDashboard) { inclusive = true }
+                        }
+                    },
+                    onVolverInicio = {
+                        navController.navigate(Route.EstudianteDashboard) {
+                            popUpTo(Route.EstudianteDashboard) { inclusive = true }
+                        }
+                    },
+                )
+                state.error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = state.error ?: "Error al registrar asistencia",
+                                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Button(onClick = {
+                                estudianteVm.clearError()
+                                navController.popBackStack()
+                            }) {
+                                Text("Volver")
+                            }
+                        }
                     }
-                },
-                onVolverInicio = {
-                    navController.navigate(Route.EstudianteDashboard) {
-                        popUpTo(Route.EstudianteDashboard) { inclusive = true }
+                }
+                else -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
                     }
-                },
-            )
+                }
+            }
         }
 
         composable<Route.EstudiantePerfil> {
@@ -357,6 +439,8 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 user = UserSession.currentUser,
                 onBack = { navController.popBackStack() },
                 onLogout = {
+                    authViewModel.resetLoginState()
+                    authViewModel.resetRegisterState()
                     UserSession.logout()
                     navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
                 },
@@ -377,6 +461,8 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 onVerInventario = { navController.navigate(Route.AuxiliarInventario) },
                 onVerPerfil = { navController.navigate(Route.AuxiliarPerfil) },
                 onLogout = {
+                    authViewModel.resetLoginState()
+                    authViewModel.resetRegisterState()
                     UserSession.logout()
                     navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
                 }
@@ -428,6 +514,8 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 user = UserSession.currentUser,
                 onBack = { navController.popBackStack() },
                 onLogout = {
+                    authViewModel.resetLoginState()
+                    authViewModel.resetRegisterState()
                     UserSession.logout()
                     navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
                 }
@@ -487,6 +575,8 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 user = UserSession.currentUser,
                 onBack = { navController.popBackStack() },
                 onLogout = {
+                    authViewModel.resetLoginState()
+                    authViewModel.resetRegisterState()
                     UserSession.logout()
                     navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
                 }

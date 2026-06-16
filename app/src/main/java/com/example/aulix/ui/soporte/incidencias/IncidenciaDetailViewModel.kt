@@ -1,20 +1,34 @@
 package com.example.aulix.ui.soporte.incidencias
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import com.example.aulix.data.local.FakeIncidenciaDataSource
+import androidx.lifecycle.viewModelScope
+import com.example.aulix.data.repository.IncidenciaRepository
 import com.example.aulix.domain.model.EstadoIncidencia
 import com.example.aulix.domain.model.Incidencia
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class IncidenciaDetailViewModel(private val incidenciaId: String) : ViewModel() {
+@HiltViewModel(assistedFactory = IncidenciaDetailViewModel.Factory::class)
+class IncidenciaDetailViewModel @AssistedInject constructor(
+    @Assisted private val incidenciaId: String,
+    private val incidenciaRepo: IncidenciaRepository,
+) : ViewModel() {
+
+    @AssistedFactory
+    interface Factory {
+        fun create(incidenciaId: String): IncidenciaDetailViewModel
+    }
 
     data class UiState(
         val incidencia: Incidencia? = null,
-        val isLoading: Boolean = false
+        val isLoading: Boolean = false,
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -23,20 +37,18 @@ class IncidenciaDetailViewModel(private val incidenciaId: String) : ViewModel() 
     init { recargarDatos() }
 
     fun recargarDatos() {
-        _uiState.update { it.copy(incidencia = FakeIncidenciaDataSource.getIncidenciaById(incidenciaId)) }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            incidenciaRepo.getIncidenciaById(incidenciaId)
+                .onSuccess { incidencia -> _uiState.update { it.copy(incidencia = incidencia, isLoading = false) } }
+                .onFailure { _uiState.update { it.copy(isLoading = false) } }
+        }
     }
 
     fun cambiarEstado(nuevoEstado: EstadoIncidencia) {
-        FakeIncidenciaDataSource.cambiarEstado(incidenciaId, nuevoEstado)
-        recargarDatos()
-    }
-
-    companion object {
-        fun factory(incidenciaId: String) = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return IncidenciaDetailViewModel(incidenciaId) as T
-            }
+        viewModelScope.launch {
+            incidenciaRepo.cambiarEstado(incidenciaId, nuevoEstado)
+                .onSuccess { recargarDatos() }
         }
     }
 }
