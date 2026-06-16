@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.EstadoPrestamo
 import com.example.aulix.domain.model.Prestamo
 import com.example.aulix.domain.model.User
@@ -42,9 +42,11 @@ fun AuxiliarHomeScreen(
     onVerInventario: () -> Unit,
     onVerPerfil: () -> Unit,
     onLogout: () -> Unit,
-    viewModel: AuxiliarHomeViewModel = viewModel()
+    viewModel: AuxiliarHomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.recargarDatos() }
 
     Scaffold(
         containerColor = Lienzo,
@@ -120,7 +122,7 @@ fun AuxiliarHomeScreen(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "AUXILIAR · LAB-B-204",
+                        text = "AUXILIAR",
                         style = MaterialTheme.typography.labelSmall,
                         color = RoleAuxiliar,
                         letterSpacing = 1.sp

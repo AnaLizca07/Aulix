@@ -45,7 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -79,7 +79,7 @@ fun SoporteHomeScreen(
     navController: NavHostController,
     onVerDetalle: (String) -> Unit,
     onNuevaIncidencia: () -> Unit,
-    viewModel: SoporteHomeViewModel = viewModel()
+    viewModel: SoporteHomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()

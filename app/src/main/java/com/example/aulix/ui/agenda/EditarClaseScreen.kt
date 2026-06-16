@@ -16,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.aulix.domain.model.AsignaturaCatalog
 import com.example.aulix.domain.model.EventoAgenda
+import com.example.aulix.domain.model.LaboratorioCatalog
 import com.example.aulix.ui.components.AulixButton
 import com.example.aulix.ui.components.AulixDropdown
 import com.example.aulix.ui.components.AulixTextField
@@ -33,21 +35,21 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val DURACIONES = listOf("1h", "1.5h", "2h", "3h")
-private const val DIA_POR_DEFECTO = "JUEVES 22 · HOY"
 private val LOCALE_ES = Locale.forLanguageTag("es-ES")
 
-// Convierte una fecha (epoch millis) en etiqueta de día p. ej. "JUEVES 22".
-private fun millisADiaLabel(millis: Long): String {
+private fun millisToDatePair(millis: Long): Pair<String, String> {
     val fecha = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-    val etiqueta = fecha.format(DateTimeFormatter.ofPattern("EEEE d", LOCALE_ES)).uppercase(LOCALE_ES)
-    return if (fecha == LocalDate.now()) "$etiqueta · HOY" else etiqueta
+    val label = fecha.format(DateTimeFormatter.ofPattern("EEEE d", LOCALE_ES)).uppercase(LOCALE_ES)
+    val iso = fecha.toString()
+    return (if (fecha == LocalDate.now()) "$label · HOY" else label) to iso
 }
 
 // ── Formulario compartido para crear o editar una clase de la agenda ───────────
 @Composable
 fun EditarClaseScreen(
-    evento: EventoAgenda?,           // null = nueva clase
-    laboratorios: List<String>,
+    evento: EventoAgenda?,
+    asignaturas: List<AsignaturaCatalog>,
+    laboratorios: List<LaboratorioCatalog>,
     defaultColorHex: Long,
     onBack: () -> Unit,
     onGuardar: (EventoAgenda) -> Unit,
@@ -55,13 +57,18 @@ fun EditarClaseScreen(
     val esNueva = evento == null
 
     var titulo by remember { mutableStateOf(evento?.titulo ?: "") }
-    var laboratorio by remember { mutableStateOf(evento?.laboratorio ?: laboratorios.first()) }
+    var asignaturaId by remember { mutableStateOf(evento?.asignaturaId ?: "") }
+    var laboratorioId by remember { mutableStateOf(evento?.laboratorioId ?: laboratorios.firstOrNull()?.id ?: "") }
     var grupo by remember { mutableStateOf(evento?.grupo ?: "") }
-    var dia by remember { mutableStateOf(evento?.dia ?: DIA_POR_DEFECTO) }
+    var diaLabel by remember { mutableStateOf(evento?.dia ?: "") }
+    var diaIso by remember { mutableStateOf(evento?.fechaIso ?: "") }
     var hora by remember { mutableStateOf(evento?.hora ?: "") }
     var duracion by remember { mutableStateOf(evento?.duracion ?: "2h") }
 
-    val valido = titulo.isNotBlank() && hora.isNotBlank()
+    val asignaturaSeleccionada = asignaturas.find { it.id == asignaturaId }
+    val laboratorioSeleccionado = laboratorios.find { it.id == laboratorioId }
+
+    val valido = titulo.isNotBlank() && hora.isNotBlank() && asignaturaId.isNotBlank() && laboratorioId.isNotBlank()
 
     Scaffold(
         containerColor = Lienzo,
@@ -70,7 +77,8 @@ fun EditarClaseScreen(
                 AulixButton(
                     text = if (esNueva) "Agregar clase" else "Guardar cambios",
                     onClick = {
-                        val detalle = if (grupo.isBlank()) laboratorio else "$laboratorio · Grupo $grupo"
+                        val labNombre = laboratorioSeleccionado?.nombre ?: ""
+                        val detalle = if (grupo.isBlank()) labNombre else "$labNombre · Grupo $grupo"
                         onGuardar(
                             EventoAgenda(
                                 id = evento?.id ?: "",
@@ -78,11 +86,14 @@ fun EditarClaseScreen(
                                 duracion = duracion,
                                 titulo = titulo.trim(),
                                 detalle = detalle,
-                                dia = dia,
-                                laboratorio = laboratorio,
+                                dia = diaLabel,
+                                laboratorio = labNombre,
                                 grupo = grupo.trim(),
                                 enCurso = evento?.enCurso ?: false,
                                 colorHex = evento?.colorHex ?: defaultColorHex,
+                                asignaturaId = asignaturaId,
+                                laboratorioId = laboratorioId,
+                                fechaIso = diaIso,
                             )
                         )
                     },
@@ -110,13 +121,29 @@ fun EditarClaseScreen(
                     label = "TÍTULO DE LA CLASE",
                     placeholder = "Ej. Configuración VLAN",
                 )
+
+                // Asignatura dropdown
                 AulixDropdown(
-                    value = laboratorio,
-                    onValueChange = { laboratorio = it },
-                    label = "LABORATORIO",
-                    options = laboratorios,
+                    value = asignaturaSeleccionada?.let { "${it.nombre} (${it.codigo})" } ?: "",
+                    onValueChange = { selected ->
+                        asignaturaId = asignaturas.find { "${it.nombre} (${it.codigo})" == selected }?.id ?: ""
+                    },
+                    label = "ASIGNATURA",
+                    options = asignaturas.map { "${it.nombre} (${it.codigo})" },
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                // Laboratorio dropdown
+                AulixDropdown(
+                    value = laboratorioSeleccionado?.nombre ?: "",
+                    onValueChange = { selected ->
+                        laboratorioId = laboratorios.find { it.nombre == selected }?.id ?: ""
+                    },
+                    label = "LABORATORIO",
+                    options = laboratorios.map { it.nombre },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
                 AulixTextField(
                     value = grupo,
                     onValueChange = { grupo = it },
@@ -124,8 +151,11 @@ fun EditarClaseScreen(
                     placeholder = "Ej. 21A",
                 )
                 DiaSelector(
-                    value = dia,
-                    onDiaSeleccionado = { dia = it },
+                    value = diaLabel,
+                    onDiaSeleccionado = { label, iso ->
+                        diaLabel = label
+                        diaIso = iso
+                    },
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     AulixTextField(
@@ -152,11 +182,12 @@ fun EditarClaseScreen(
 }
 
 // Campo de día que abre un calendario (Material 3 DatePicker).
+// Devuelve label de display (ej. "JUEVES 22 · HOY") e ISO date ("2026-06-17")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DiaSelector(
     value: String,
-    onDiaSeleccionado: (String) -> Unit,
+    onDiaSeleccionado: (label: String, isoDate: String) -> Unit,
 ) {
     var mostrarDialogo by remember { mutableStateOf(false) }
 
@@ -193,7 +224,10 @@ private fun DiaSelector(
             onDismissRequest = { mostrarDialogo = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { onDiaSeleccionado(millisADiaLabel(it)) }
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val (label, iso) = millisToDatePair(millis)
+                        onDiaSeleccionado(label, iso)
+                    }
                     mostrarDialogo = false
                 }) { Text("Aceptar") }
             },

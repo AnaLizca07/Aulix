@@ -1,3 +1,11 @@
 package com.example.aulix.domain.model
 
-enum class EstadoIncidencia { ABIERTA, EN_ATENCION, RESUELTA }
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+enum class EstadoIncidencia {
+    @SerialName("abierta")     ABIERTA,
+    @SerialName("en_atencion") EN_ATENCION,
+    @SerialName("resuelta")    RESUELTA,
+}

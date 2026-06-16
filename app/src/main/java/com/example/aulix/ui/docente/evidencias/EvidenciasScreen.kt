@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +61,14 @@ fun EvidenciasScreen(
             )
 
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                val fechaEvidencia = remember(sesion.reserva?.fecha) {
+                    val raw = sesion.reserva?.fecha ?: return@remember ""
+                    runCatching {
+                        val d = java.time.LocalDate.parse(raw)
+                        val mes = d.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("es", "CO")).uppercase()
+                        "${d.dayOfMonth} $mes"
+                    }.getOrDefault(raw)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("${evidencias.size}", style = MaterialTheme.typography.displayLarge, color = Tinta)
                     Spacer(Modifier.width(6.dp))
@@ -68,7 +77,7 @@ fun EvidenciasScreen(
                     Spacer(Modifier.width(8.dp))
                     EvidenciaPill("Galería", Icons.Default.Image, filled = false) {}
                 }
-                Text("22 MAY · ${sesion.laboratorio}", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 1.sp)
+                Text("$fechaEvidencia · ${sesion.laboratorio}", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 1.sp)
 
                 Spacer(Modifier.height(16.dp))
 
