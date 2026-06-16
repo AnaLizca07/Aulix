@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.PrioridadIncidencia
 import com.example.aulix.domain.model.User
 import com.example.aulix.ui.components.AulixButton
@@ -40,7 +40,7 @@ import com.example.aulix.ui.theme.Tinta
 fun RegistrarIncidenciaScreen(
     user: User,
     onBack: () -> Unit,
-    viewModel: RegistrarIncidenciaViewModel = viewModel()
+    viewModel: RegistrarIncidenciaViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 

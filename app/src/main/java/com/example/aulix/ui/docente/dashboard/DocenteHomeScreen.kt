@@ -49,7 +49,13 @@ fun DocenteHomeScreen(
     onPerfil: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
-    val sesion = state.sesion
+    val sesion = state.sesion ?: com.example.aulix.domain.model.Sesion()
+    val fechaHoyLabel = remember {
+        val hoy = java.time.LocalDate.now()
+        val diaNombre = hoy.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale("es", "CO")).uppercase()
+        val mesNombre = hoy.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("es", "CO")).uppercase()
+        "$diaNombre ${hoy.dayOfMonth} · $mesNombre ${hoy.year}"
+    }
 
     Scaffold(
         containerColor = Lienzo,
@@ -82,7 +88,7 @@ fun DocenteHomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = "JUEVES 22 · MAY 2026",
+                        text = fechaHoyLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = Tinta.copy(alpha = 0.45f),
                         letterSpacing = 1.sp,
@@ -106,8 +112,19 @@ fun DocenteHomeScreen(
                     color = Tinta.copy(alpha = 0.55f),
                 )
                 Spacer(Modifier.height(4.dp))
+                val practicasHoy = state.agenda.count { ev ->
+                    runCatching {
+                        val fecha = java.time.LocalDate.parse(ev.dia)
+                        fecha == java.time.LocalDate.now()
+                    }.getOrDefault(ev.dia.contains("HOY"))
+                }
+                val practicasHoyText = when (practicasHoy) {
+                    0    -> "Sin prácticas\nprogramadas hoy."
+                    1    -> "Tienes 1 práctica\nprogramada hoy."
+                    else -> "Tienes $practicasHoy prácticas\nprogramadas hoy."
+                }
                 Text(
-                    text = "Tienes 1 práctica\nprogramada hoy.",
+                    text = practicasHoyText,
                     style = MaterialTheme.typography.displayLarge,
                     color = Tinta,
                     lineHeight = 40.sp,

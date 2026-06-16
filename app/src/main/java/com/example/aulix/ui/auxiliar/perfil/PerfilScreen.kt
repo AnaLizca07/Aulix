@@ -51,7 +51,7 @@ fun PerfilScreen(
                     )
                 }
                 val (eyebrowText, eyebrowColor) = when (user.role) {
-                    UserRole.AUXILIAR        -> "AUXILIAR · LAB-B-204" to RoleAuxiliar
+                    UserRole.AUXILIAR        -> "AUXILIAR" to RoleAuxiliar
                     UserRole.DOCENTE         -> "DOCENTE · MIS CURSOS" to RoleDocente
                     UserRole.ESTUDIANTE      -> "ESTUDIANTE" to RoleEstudiante
                     UserRole.SOPORTE_TECNICO -> "SOPORTE TÉCNICO" to RoleSoporte
@@ -119,7 +119,7 @@ fun PerfilScreen(
                 AulixCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (user.role == UserRole.AUXILIAR) {
-                            InfoRow(label = "Laboratorio", value = "LAB-B-204")
+                            InfoRow(label = "Laboratorio", value = "—")
                             HorizontalDivider(color = BorderLight, thickness = 1.dp)
                         }
                         InfoRow(label = "Programa", value = user.program)

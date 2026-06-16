@@ -36,8 +36,19 @@ fun EstudianteAgendaScreen(
     onHistorial: () -> Unit,
     onPerfil: () -> Unit,
 ) {
+    val hoy        = remember { java.time.LocalDate.now() }
+    val lunes      = remember(hoy) { hoy.with(java.time.DayOfWeek.MONDAY) }
+    val diasSemana = remember(lunes) {
+        listOf("LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB").mapIndexed { i, nombre ->
+            nombre to lunes.plusDays(i.toLong()).dayOfMonth
+        }
+    }
+    val mesAnio = remember(hoy) {
+        val mes = hoy.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale("es", "CO")).uppercase()
+        "$mes ${hoy.year}"
+    }
     var filtro by remember { mutableStateOf("Todos") }
-    var diaSel by remember { mutableStateOf(22) }
+    var diaSel by remember { mutableStateOf(hoy.dayOfMonth) }
     val filtrados = if (filtro == "Todos") eventos else eventos.filter { it.laboratorio == filtro }
     val porDia = filtrados.groupBy { it.dia }
 
@@ -59,7 +70,7 @@ fun EstudianteAgendaScreen(
             ) {
                 CircleIconButton(Icons.Default.Menu, onClick = {}, contentDescription = "Menú")
                 Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("MAYO 2026", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 1.sp)
+                    Text(mesAnio, style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 1.sp)
                     Text("Mi agenda", style = MaterialTheme.typography.titleLarge, color = Tinta)
                 }
                 CircleIconButton(Icons.Default.FilterList, onClick = {}, contentDescription = "Filtrar")
@@ -79,8 +90,7 @@ fun EstudianteAgendaScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                val dias = listOf("LUN" to 19, "MAR" to 20, "MIÉ" to 21, "JUE" to 22, "VIE" to 23, "SÁB" to 24)
-                dias.forEach { (nombre, num) ->
+                diasSemana.forEach { (nombre, num) ->
                     val sel = num == diaSel
                     Column(
                         modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp))

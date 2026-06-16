@@ -17,33 +17,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.Destinatario
 import com.example.aulix.domain.model.UserRole
+import com.example.aulix.ui.auxiliar.prestamo.RegistrarPrestamoViewModel
 import com.example.aulix.ui.components.UserAvatar
 import com.example.aulix.ui.theme.*
-
-private val destinatariosMock = listOf(
-    Destinatario("Pérez, Laura",    "E-2003047", "Programación de Redes"),
-    Destinatario("Vargas, José",    "E-2001823", "Electrónica"),
-    Destinatario("Salazar, Ana",    "E-2002341", "Redes"),
-    Destinatario("García, Juan",    "E-2001100", "Electrónica"),
-    Destinatario("Torres, María",   "E-2002200", "Redes"),
-    Destinatario("Ramírez, Carlos", "E-2004501", "Ing. Software"),
-    Destinatario("López, Diana",    "E-2003892", "Ing. Software"),
-    Destinatario("Martínez, Pedro", "E-2002765", "Electrónica"),
-    Destinatario("Gómez, Carolina", "E-2001234", "Programación de Redes"),
-    Destinatario("Herrera, Luis",   "E-2004123", "Redes")
-)
 
 @Composable
 fun CambiarDestinatarioScreen(
     onBack: () -> Unit,
-    onSeleccionar: (Destinatario) -> Unit
+    onSeleccionar: (Destinatario) -> Unit,
+    viewModel: RegistrarPrestamoViewModel = hiltViewModel(),
 ) {
+    val state by viewModel.uiState.collectAsState()
     var query by remember { mutableStateOf("") }
-    val filtrados = remember(query) {
-        if (query.isBlank()) destinatariosMock
-        else destinatariosMock.filter {
+    val filtrados = remember(query, state.destinatarios) {
+        if (query.isBlank()) state.destinatarios
+        else state.destinatarios.filter {
             it.nombre.contains(query, ignoreCase = true) ||
             it.id.contains(query, ignoreCase = true)
         }

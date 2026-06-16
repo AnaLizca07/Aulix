@@ -164,8 +164,18 @@ fun ConfirmarAperturaScreen(
     onBack: () -> Unit,
     onConfirmar: () -> Unit,
 ) {
-    var observaciones by remember { mutableStateOf("Práctica con 22 estudiantes. Faltan 2 confirmados. Switch 03 reiniciado antes de comenzar.") }
+    var observaciones by remember { mutableStateOf("") }
     val etiquetas = listOf("Asistencia parcial", "Equipo con falla", "Material listo", "Cambio de aula")
+    val horaApertura = remember {
+        val t = java.time.LocalTime.now()
+        "%02d:%02d".format(t.hour, t.minute)
+    }
+    val fechaApertura = remember {
+        val d = java.time.LocalDate.now()
+        val diaNombre = d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("es", "CO")).uppercase()
+        val mesNombre = d.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("es", "CO")).uppercase()
+        "$diaNombre · ${d.dayOfMonth} $mesNombre ${d.year}"
+    }
 
     Scaffold(
         containerColor = Lienzo,
@@ -212,9 +222,9 @@ fun ConfirmarAperturaScreen(
                 Text("HORA REAL DE APERTURA", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 1.sp)
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("10:03", style = MaterialTheme.typography.displayLarge, color = Tinta)
+                    Text(horaApertura, style = MaterialTheme.typography.displayLarge, color = Tinta)
                     Spacer(Modifier.width(12.dp))
-                    Text("JUE · 22 MAY 2026", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), modifier = Modifier.padding(bottom = 6.dp))
+                    Text(fechaApertura, style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), modifier = Modifier.padding(bottom = 6.dp))
                 }
 
                 Spacer(Modifier.height(20.dp))

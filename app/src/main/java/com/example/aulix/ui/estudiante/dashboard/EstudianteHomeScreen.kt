@@ -43,7 +43,7 @@ fun EstudianteHomeScreen(
     onPerfil: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
-    val sesion = state.sesionActiva
+    val sesionActiva = state.sesionActiva
 
     Scaffold(
         containerColor = Lienzo,
@@ -63,8 +63,13 @@ fun EstudianteHomeScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 UserAvatar(initials = user.initials, role = UserRole.ESTUDIANTE, size = 36)
+                val periodoLabel = remember {
+                    val d = java.time.LocalDate.now()
+                    val mes = d.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("es", "CO")).uppercase()
+                    "ESTUDIANTE · $mes ${d.year}"
+                }
                 Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("ESTUDIANTE · MAY 2026", style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 1.sp)
+                    Text(periodoLabel, style = MaterialTheme.typography.labelSmall, color = Tinta.copy(alpha = 0.45f), letterSpacing = 1.sp)
                     Text("Mis prácticas", style = MaterialTheme.typography.titleLarge, color = Tinta)
                 }
                 Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Arena), contentAlignment = Alignment.Center) {
@@ -75,49 +80,67 @@ fun EstudianteHomeScreen(
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                 Text("Hola, ${user.fullName.split(" ").first()} —", style = MaterialTheme.typography.bodyLarge, color = Tinta.copy(alpha = 0.55f))
                 Spacer(Modifier.height(4.dp))
-                Text("Tienes 2 sesiones esta\nsemana.", style = MaterialTheme.typography.displayLarge, color = Tinta, lineHeight = 40.sp)
+                val countText = when (val n = state.sesionesSemana) {
+                    0    -> "Sin sesiones\nprogramadas esta semana."
+                    1    -> "Tienes 1 sesión\nprogramada esta semana."
+                    else -> "Tienes $n sesiones\nprogramadas esta semana."
+                }
+                Text(countText, style = MaterialTheme.typography.displayLarge, color = Tinta, lineHeight = 40.sp)
 
                 Spacer(Modifier.height(20.dp))
 
-                // Sesión activa
-                Column(
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Cobalto).padding(20.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(Color.White))
-                        Spacer(Modifier.width(6.dp))
-                        Text("EN CURSO · ABIERTA POR TU DOCENTE", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f), letterSpacing = 0.5.sp)
+                if (sesionActiva != null) {
+                    // Sesión activa real — el docente ya la abrió
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Cobalto).padding(20.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(Color.White))
+                            Spacer(Modifier.width(6.dp))
+                            Text("EN CURSO · ABIERTA POR TU DOCENTE", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f), letterSpacing = 0.5.sp)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Text(sesionActiva.titulo, style = MaterialTheme.typography.headlineMedium, color = Color.White)
+                        Text("${sesionActiva.asignatura} · ${sesionActiva.laboratorio}", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
+                        Spacer(Modifier.height(16.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Surface(
+                                onClick = onEscanearQr,
+                                shape = RoundedCornerShape(50.dp),
+                                color = Color.White,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Row(modifier = Modifier.padding(vertical = 14.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.QrCode2, null, tint = Cobalto, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Escanear QR", style = MaterialTheme.typography.titleMedium, color = Cobalto, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                            Surface(
+                                onClick = onIngresarCodigo,
+                                shape = RoundedCornerShape(50.dp),
+                                color = Color.Transparent,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.6f)),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Row(modifier = Modifier.padding(vertical = 14.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Schedule, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Código", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                                }
+                            }
+                        }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Text(sesion.titulo, style = MaterialTheme.typography.headlineMedium, color = Color.White)
-                    Text("${sesion.asignatura} · ${sesion.laboratorio}", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
-                    Spacer(Modifier.height(16.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Surface(
-                            onClick = onEscanearQr,
-                            shape = RoundedCornerShape(50.dp),
-                            color = Color.White,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Row(modifier = Modifier.padding(vertical = 14.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.QrCode2, null, tint = Cobalto, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Escanear QR", style = MaterialTheme.typography.titleMedium, color = Cobalto, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                        Surface(
-                            onClick = onIngresarCodigo,
-                            shape = RoundedCornerShape(50.dp),
-                            color = Color.Transparent,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.6f)),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Row(modifier = Modifier.padding(vertical = 14.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Schedule, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Código", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                            }
-                        }
+                } else {
+                    // Sin sesión activa — placeholder
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
+                            .background(Arena).padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text("Sin sesión activa ahora", style = MaterialTheme.typography.titleMedium, color = Tinta)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Cuando tu docente abra una práctica aparecerá aquí.", style = MaterialTheme.typography.bodySmall, color = Tinta.copy(alpha = 0.55f))
                     }
                 }
 

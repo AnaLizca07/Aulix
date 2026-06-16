@@ -18,7 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.aulix.domain.model.Destinatario
 import com.example.aulix.domain.model.User
@@ -37,7 +37,7 @@ fun RegistrarPrestamoScreen(
     onBack: () -> Unit,
     onCambiarDestinatario: () -> Unit,
     onConfirmado: () -> Unit,
-    viewModel: RegistrarPrestamoViewModel = viewModel()
+    viewModel: RegistrarPrestamoViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle

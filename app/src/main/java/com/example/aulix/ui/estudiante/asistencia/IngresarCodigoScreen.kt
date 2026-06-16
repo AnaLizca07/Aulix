@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,14 +33,16 @@ fun IngresarCodigoScreen(
     onBack: () -> Unit,
     onConfirmar: () -> Unit,
 ) {
-    var codigo by remember { mutableStateOf("47923") }
+    var codigo by remember { mutableStateOf("") }
     val completo = codigo.length == 6
+    val codigoValido = completo && codigo == sesion.codigoAsistencia
+    val codigoInvalido = completo && !codigoValido
 
     Scaffold(
         containerColor = Lienzo,
         bottomBar = {
             Box(modifier = Modifier.background(Lienzo).padding(20.dp)) {
-                AulixButton(text = "✓  Confirmar asistencia", onClick = onConfirmar, enabled = completo)
+                AulixButton(text = "✓  Confirmar asistencia", onClick = onConfirmar, enabled = codigoValido)
             }
         },
     ) { padding ->
@@ -61,10 +64,17 @@ fun IngresarCodigoScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     repeat(6) { i ->
                         val char = codigo.getOrNull(i)
-                        val isCursor = i == codigo.length && codigo.length < 6
+                        val isCursor = i == codigo.length && !completo
+                        val borderColor = when {
+                            codigoInvalido -> StatusRed
+                            codigoValido   -> StatusGreen
+                            isCursor       -> Cobalto
+                            else           -> BorderLight
+                        }
+                        val borderWidth = if (isCursor || codigoInvalido || codigoValido) 2.dp else 1.dp
                         Box(
                             modifier = Modifier.size(46.dp, 56.dp).clip(RoundedCornerShape(10.dp)).background(Color.White)
-                                .border(if (isCursor) 2.dp else 1.dp, if (isCursor) Cobalto else BorderLight, RoundedCornerShape(10.dp)),
+                                .border(borderWidth, borderColor, RoundedCornerShape(10.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(char?.toString() ?: "", style = MaterialTheme.typography.headlineMedium, color = Tinta, fontWeight = FontWeight.Bold)
@@ -72,14 +82,34 @@ fun IngresarCodigoScreen(
                     }
                 }
 
-                Spacer(Modifier.height(14.dp))
-                Row(
-                    modifier = Modifier.clip(RoundedCornerShape(50.dp)).background(StatusGreen.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Default.Schedule, null, tint = StatusGreen, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("CÓDIGO VIGENTE · 03:47", style = MaterialTheme.typography.labelSmall, color = StatusGreen, letterSpacing = 0.5.sp)
+                Spacer(Modifier.height(12.dp))
+
+                // Estado del código
+                when {
+                    codigoValido -> Row(
+                        modifier = Modifier.clip(RoundedCornerShape(50.dp)).background(StatusGreen.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.CheckCircle, null, tint = StatusGreen, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("CÓDIGO CORRECTO", style = MaterialTheme.typography.labelSmall, color = StatusGreen, letterSpacing = 0.5.sp)
+                    }
+                    codigoInvalido -> Row(
+                        modifier = Modifier.clip(RoundedCornerShape(50.dp)).background(StatusRed.copy(alpha = 0.10f)).padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.Schedule, null, tint = StatusRed, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("CÓDIGO INCORRECTO", style = MaterialTheme.typography.labelSmall, color = StatusRed, letterSpacing = 0.5.sp)
+                    }
+                    else -> Row(
+                        modifier = Modifier.clip(RoundedCornerShape(50.dp)).background(StatusGreen.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.Schedule, null, tint = StatusGreen, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("CÓDIGO ACTIVO", style = MaterialTheme.typography.labelSmall, color = StatusGreen, letterSpacing = 0.5.sp)
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))

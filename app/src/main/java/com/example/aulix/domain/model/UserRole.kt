@@ -1,10 +1,14 @@
 package com.example.aulix.domain.model
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class UserRole {
-    DOCENTE,
-    ESTUDIANTE,
-    AUXILIAR,
-    SOPORTE_TECNICO;
+    @SerialName("docente")         DOCENTE,
+    @SerialName("estudiante")      ESTUDIANTE,
+    @SerialName("auxiliar")        AUXILIAR,
+    @SerialName("soporte_tecnico") SOPORTE_TECNICO;
 
     fun displayName(): String = when (this) {
         DOCENTE          -> "Docente"

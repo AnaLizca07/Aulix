@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -22,9 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.aulix.util.generarQrBitmap
 import com.example.aulix.domain.model.Asistente
 import com.example.aulix.domain.model.Sesion
 import com.example.aulix.ui.docente.components.CircleIconButton
@@ -36,8 +39,10 @@ import com.example.aulix.ui.theme.*
 fun AsistenciaQrScreen(
     sesion: Sesion,
     asistentes: List<Asistente>,
+    timerSegundos: Int,
     onBack: () -> Unit,
     onUsarCodigo: () -> Unit,
+    onRenovar: () -> Unit,
     onCerrarAsistencia: () -> Unit,
 ) {
     Scaffold(
@@ -95,21 +100,35 @@ fun AsistenciaQrScreen(
                         .padding(28.dp),
                     contentAlignment = Alignment.Center,
                 ) {
+                    val qrBitmap = remember(sesion.codigoAsistencia) {
+                        runCatching { generarQrBitmap(sesion.codigoAsistencia) }.getOrNull()
+                    }
                     Box(
                         modifier = Modifier.size(180.dp).clip(RoundedCornerShape(12.dp)).background(TextOnDark),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Default.QrCode2, "Código QR", tint = TintaDark, modifier = Modifier.size(160.dp))
+                        if (qrBitmap != null) {
+                            Image(
+                                bitmap = qrBitmap.asImageBitmap(),
+                                contentDescription = "Código QR de asistencia",
+                                modifier = Modifier.size(160.dp),
+                            )
+                        } else {
+                            Icon(Icons.Default.QrCode2, "Código QR", tint = TintaDark, modifier = Modifier.size(160.dp))
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(16.dp))
+                val timerLabel = remember(timerSegundos) {
+                    "%02d:%02d".format(timerSegundos / 60, timerSegundos % 60)
+                }
                 Text("VENCE EN", style = MaterialTheme.typography.labelSmall, color = TextMutedDark, letterSpacing = 1.sp)
-                Text("04:32", style = MaterialTheme.typography.displayLarge, color = Cobre)
+                Text(timerLabel, style = MaterialTheme.typography.displayLarge, color = Cobre)
 
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DarkPillButton("Renovar", Icons.Default.Refresh) {}
+                    DarkPillButton("Renovar", Icons.Default.Refresh, onRenovar)
                     DarkPillButton("Usar código", Icons.Default.Schedule, onUsarCodigo)
                 }
 
@@ -195,7 +214,9 @@ private fun AsistenteRowDark(a: Asistente) {
 fun CodigoTiempoScreen(
     sesion: Sesion,
     asistentes: List<Asistente>,
+    timerSegundos: Int,
     onBack: () -> Unit,
+    onRenovar: () -> Unit,
     onVolverQr: () -> Unit,
 ) {
     Scaffold(
@@ -250,10 +271,13 @@ fun CodigoTiempoScreen(
                         }
                     }
                     Spacer(Modifier.height(14.dp))
-                    Text("VENCE EN 04:32", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f), letterSpacing = 1.sp)
+                    val timerLabelCodigo = remember(timerSegundos) {
+                        "%02d:%02d".format(timerSegundos / 60, timerSegundos % 60)
+                    }
+                    Text("VENCE EN $timerLabelCodigo", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f), letterSpacing = 1.sp)
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(
-                        progress = { 0.55f },
+                        progress = { timerSegundos / 300f },
                         color = Color.White,
                         trackColor = Color.White.copy(alpha = 0.25f),
                         modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
@@ -262,7 +286,7 @@ fun CodigoTiempoScreen(
 
                 Spacer(Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    LightPillButton("Regenerar", Icons.Default.Refresh, Modifier.weight(1f)) {}
+                    LightPillButton("Regenerar", Icons.Default.Refresh, Modifier.weight(1f), onRenovar)
                     LightPillButton("Compartir", Icons.Default.IosShare, Modifier.weight(1f)) {}
                 }
 

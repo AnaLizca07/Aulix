@@ -1,15 +1,22 @@
 package com.example.aulix.ui.soporte.dashboard
 
 import androidx.lifecycle.ViewModel
-import com.example.aulix.data.local.FakeIncidenciaDataSource
+import androidx.lifecycle.viewModelScope
+import com.example.aulix.data.repository.IncidenciaRepository
 import com.example.aulix.domain.model.Incidencia
 import com.example.aulix.domain.session.UserSession
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class SoporteHomeViewModel : ViewModel() {
+@HiltViewModel
+class SoporteHomeViewModel @Inject constructor(
+    private val incidenciaRepo: IncidenciaRepository,
+) : ViewModel() {
 
     data class UiState(
         val abiertas: Int = 0,
@@ -19,38 +26,52 @@ class SoporteHomeViewModel : ViewModel() {
         val tabSeleccionado: Int = 0,
         val totalCount: Int = 0,
         val misAsignadasCount: Int = 0,
-        val sinAsignarCount: Int = 0
+        val sinAsignarCount: Int = 0,
+        val isLoading: Boolean = false,
     )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    private var todasLasIncidencias: List<Incidencia> = emptyList()
+
     init { recargarDatos() }
 
     fun recargarDatos() {
-        val todas = FakeIncidenciaDataSource.getIncidencias()
-        val (abiertas, enAtencion, resueltasHoy) = FakeIncidenciaDataSource.getKPIs()
-        val nombreUsuario = UserSession.currentUser?.fullName ?: ""
-        val misAsignadas = todas.filter { it.asignadoA == nombreUsuario }
-        val sinAsignar = todas.filter { it.asignadoA == null }
-        val filtradas = filtrarPorTab(todas, _uiState.value.tabSeleccionado, nombreUsuario)
-        _uiState.update {
-            it.copy(
-                abiertas = abiertas,
-                enAtencion = enAtencion,
-                resueltasHoy = resueltasHoy,
-                incidencias = filtradas,
-                totalCount = todas.size,
-                misAsignadasCount = misAsignadas.size,
-                sinAsignarCount = sinAsignar.size
-            )
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            incidenciaRepo.getKPIs()
+                .onSuccess { (abiertas, enAtencion, resueltasHoy) ->
+                    _uiState.update {
+                        it.copy(
+                            abiertas = abiertas,
+                            enAtencion = enAtencion,
+                            resueltasHoy = resueltasHoy,
+                            isLoading = false,
+                        )
+                    }
+                }
+                .onFailure { _uiState.update { it.copy(isLoading = false) } }
+            incidenciaRepo.getIncidencias()
+                .onSuccess { todas ->
+                    todasLasIncidencias = todas
+                    val nombreUsuario = UserSession.currentUser?.fullName ?: ""
+                    val filtradas = filtrarPorTab(todas, _uiState.value.tabSeleccionado, nombreUsuario)
+                    _uiState.update {
+                        it.copy(
+                            incidencias = filtradas,
+                            totalCount = todas.size,
+                            misAsignadasCount = todas.count { it.asignadoA == nombreUsuario },
+                            sinAsignarCount = todas.count { it.asignadoA == null },
+                        )
+                    }
+                }
         }
     }
 
     fun cambiarTab(index: Int) {
-        val todas = FakeIncidenciaDataSource.getIncidencias()
         val nombreUsuario = UserSession.currentUser?.fullName ?: ""
-        val filtradas = filtrarPorTab(todas, index, nombreUsuario)
+        val filtradas = filtrarPorTab(todasLasIncidencias, index, nombreUsuario)
         _uiState.update { it.copy(tabSeleccionado = index, incidencias = filtradas) }
     }
 

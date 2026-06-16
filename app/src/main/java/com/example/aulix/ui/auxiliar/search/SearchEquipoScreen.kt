@@ -22,7 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.Equipo
 import com.example.aulix.domain.model.EstadoEquipo
 import com.example.aulix.ui.components.AulixButton
@@ -34,7 +34,7 @@ import com.example.aulix.ui.theme.*
 fun SearchEquipoScreen(
     onBack: () -> Unit,
     onContinuar: (String) -> Unit,
-    viewModel: SearchEquipoViewModel = viewModel()
+    viewModel: SearchEquipoViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val disponiblesCount = state.resultados.count { it.estado == EstadoEquipo.DISPONIBLE }
@@ -265,9 +265,10 @@ private fun EquipoItemRow(
             Spacer(modifier = Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 val (label, color, bgColor) = when (equipo.estado) {
-                    EstadoEquipo.DISPONIBLE -> Triple("DISPONIBLE", StatusGreen, StatusGreenBg)
-                    EstadoEquipo.PRESTADO   -> Triple("PRESTADO",   StatusAmber, StatusAmberBg)
-                    EstadoEquipo.REPARACION -> Triple("REPARACIÓN", StatusRed,   StatusRedBg)
+                    EstadoEquipo.DISPONIBLE        -> Triple("DISPONIBLE",  StatusGreen, StatusGreenBg)
+                    EstadoEquipo.PRESTADO          -> Triple("PRESTADO",    StatusAmber, StatusAmberBg)
+                    EstadoEquipo.REPARACION        -> Triple("REPARACIÓN",  StatusRed,   StatusRedBg)
+                    EstadoEquipo.FUERA_DE_SERVICIO -> Triple("FUERA SERV.", StatusRed,   StatusRedBg)
                 }
                 StatusChip(label = label, color = color, backgroundColor = bgColor)
                 if (seleccionado) {

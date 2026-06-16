@@ -20,7 +20,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.EstadoPrestamo
 import com.example.aulix.domain.model.Prestamo
 import com.example.aulix.ui.components.StatusChip
@@ -29,7 +29,7 @@ import com.example.aulix.ui.theme.*
 @Composable
 fun HistorialScreen(
     onBack: () -> Unit,
-    viewModel: HistorialViewModel = viewModel()
+    viewModel: HistorialViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -55,7 +55,7 @@ fun HistorialScreen(
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "HU 12 · LAB-B-204",
+                        text = "HISTORIAL",
                         style = MaterialTheme.typography.labelSmall,
                         color = Cobre,
                         letterSpacing = 1.sp
@@ -94,8 +94,13 @@ fun HistorialScreen(
                                 .fillMaxWidth()
                                 .padding(20.dp)
                         ) {
+                            val mesBanner = remember {
+                                val d = java.time.LocalDate.now()
+                                val mes = d.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale("es", "CO")).uppercase()
+                                "$mes ${d.year} · A LA FECHA"
+                            }
                             Text(
-                                text = "MAYO 2026 · A LA FECHA",
+                                text = mesBanner,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.White.copy(alpha = 0.7f),
                                 letterSpacing = 1.sp
@@ -131,6 +136,7 @@ fun HistorialScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             BarChartCanvas(
+                                valores = state.prestamosPorDia,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(48.dp)
@@ -226,8 +232,8 @@ fun HistorialScreen(
 }
 
 @Composable
-private fun BarChartCanvas(modifier: Modifier = Modifier) {
-    val valores = listOf(3, 4, 2, 5, 6, 3, 5, 6, 4, 5, 6, 4, 5, 7, 5)
+private fun BarChartCanvas(valores: List<Int>, modifier: Modifier = Modifier) {
+    if (valores.isEmpty()) return
     val maxVal = valores.max().toFloat()
 
     Canvas(modifier = modifier) {

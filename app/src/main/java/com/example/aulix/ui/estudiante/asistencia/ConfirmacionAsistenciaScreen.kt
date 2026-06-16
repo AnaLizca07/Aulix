@@ -19,13 +19,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.aulix.data.local.FakeEstudianteDataSource
+import com.example.aulix.ui.estudiante.EstudianteViewModel
 import com.example.aulix.ui.theme.*
 
 // ── Confirmación de asistencia con comprobante ─────────────────────────────────
 @Composable
 fun ConfirmacionAsistenciaScreen(
-    comprobante: FakeEstudianteDataSource.Comprobante,
+    comprobante: EstudianteViewModel.Comprobante,
     onGuardar: () -> Unit,
     onVolverInicio: () -> Unit,
 ) {

@@ -38,7 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.aulix.domain.model.EstadoIncidencia
 import com.example.aulix.domain.model.EventoIncidencia
 import com.example.aulix.domain.model.Incidencia
@@ -69,7 +69,9 @@ fun IncidenciaDetailScreen(
     incidenciaId: String,
     onBack: () -> Unit,
     onVerHistorialEquipo: (String) -> Unit,
-    viewModel: IncidenciaDetailViewModel = viewModel(factory = IncidenciaDetailViewModel.factory(incidenciaId))
+    viewModel: IncidenciaDetailViewModel = hiltViewModel<IncidenciaDetailViewModel, IncidenciaDetailViewModel.Factory>(
+        creationCallback = { factory -> factory.create(incidenciaId) }
+    )
 ) {
     val state by viewModel.uiState.collectAsState()
     val incidencia = state.incidencia ?: return
