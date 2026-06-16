@@ -51,6 +51,7 @@ class SesionRepository @Inject constructor(private val supabase: SupabaseClient)
     // Próxima sesión programada del docente (estado = 'pendiente', fecha >= hoy)
     suspend fun getSesionProgramada(): Result<Sesion?> = runCatching {
         val uid = supabase.auth.currentUserOrNull()?.id ?: return@runCatching null
+        android.util.Log.e("SesionRepo", "getSesionProgramada uid=$uid")
         val rows = supabase.from("sesion")
             .select(Columns.raw(sesionSelect)) {
                 filter {
@@ -59,7 +60,10 @@ class SesionRepository @Inject constructor(private val supabase: SupabaseClient)
                 }
             }
             .decodeList<Sesion>()
-        rows.firstOrNull()
+        android.util.Log.e("SesionRepo", "getSesionProgramada rows=${rows.size} reserva=${rows.firstOrNull()?.reserva}")
+        rows.firstOrNull()?.let { sesion ->
+            sesion.copy(minutosRestantes = calcMinutosRestantes(sesion))
+        }
     }
 
     // Abre la sesión pendiente: actualiza estado → 'activa' y genera código de asistencia
@@ -77,40 +81,71 @@ class SesionRepository @Inject constructor(private val supabase: SupabaseClient)
     // Crea una reserva con su sesión pendiente asociada (flujo nueva clase)
     suspend fun crearReserva(evento: EventoAgenda): Result<EventoAgenda> = runCatching {
         val uid = supabase.auth.currentUserOrNull()!!.id
-        val body = buildMap<String, Any?> {
-            put("titulo", evento.titulo)
-            put("grupo", evento.grupo.ifBlank { null })
-            put("hora_inicio", if (evento.hora.length == 5) "${evento.hora}:00" else evento.hora)
-            put("hora_fin", calcHoraFin(evento.hora, evento.duracion))
-            put("fecha", evento.fechaIso.ifBlank { evento.dia })
-            put("color_hex", "#%06X".format(evento.colorHex and 0xFFFFFF))
-            put("docente_id", uid)
-            put("estado", "pendiente")
-            if (evento.asignaturaId.isNotBlank()) put("asignatura_id", evento.asignaturaId)
-            if (evento.laboratorioId.isNotBlank()) put("laboratorio_id", evento.laboratorioId)
-        }
         val reserva = supabase.from("reserva")
-            .insert(body) { select() }
+            .insert(
+                ReservaInsert(
+                    titulo       = evento.titulo,
+                    grupo        = evento.grupo.ifBlank { null },
+                    horaInicio   = if (evento.hora.length == 5) "${evento.hora}:00" else evento.hora,
+                    horaFin      = calcHoraFin(evento.hora, evento.duracion),
+                    fecha        = evento.fechaIso.ifBlank { evento.dia },
+                    colorHex     = "#%06X".format(evento.colorHex and 0xFFFFFF),
+                    docenteId    = uid,
+                    estado       = "pendiente",
+                    asignaturaId = evento.asignaturaId,
+                    laboratorioId = evento.laboratorioId,
+                )
+            ) { select() }
             .decodeSingle<ReservaMinima>()
         supabase.from("sesion").insert(
-            mapOf(
-                "reserva_id" to reserva.id,
-                "docente_id" to uid,
-                "codigo_asistencia" to "",
-                "estado" to "pendiente",
+            SesionInsert(
+                reservaId        = reserva.id,
+                docenteId        = uid,
+                codigoAsistencia = "",
+                estado           = "pendiente",
             )
         )
         evento.copy(id = reserva.id)
     }
 
+    // Genera un nuevo código de asistencia para una sesión activa
+    suspend fun renovarCodigo(sesionId: String, nuevoCodigo: String): Result<Sesion> = runCatching {
+        supabase.from("sesion").update({
+            set("codigo_asistencia", nuevoCodigo)
+        }) {
+            filter { eq("id", sesionId) }
+            select(Columns.raw(sesionSelect))
+        }.decodeSingle()
+    }
+
+    // Actualiza una reserva existente
+    suspend fun actualizarReserva(evento: EventoAgenda): Result<Unit> = runCatching {
+        supabase.from("reserva").update(
+            ReservaInsert(
+                titulo        = evento.titulo,
+                grupo         = evento.grupo.ifBlank { null },
+                horaInicio    = if (evento.hora.length == 5) "${evento.hora}:00" else evento.hora,
+                horaFin       = calcHoraFin(evento.hora, evento.duracion),
+                fecha         = evento.fechaIso.ifBlank { evento.dia },
+                colorHex      = "#%06X".format(evento.colorHex and 0xFFFFFF),
+                docenteId     = supabase.auth.currentUserOrNull()!!.id,
+                estado        = "pendiente",
+                asignaturaId  = evento.asignaturaId,
+                laboratorioId = evento.laboratorioId,
+            )
+        ) {
+            filter { eq("id", evento.id) }
+        }
+    }
+
     // Catálogo de asignaturas
     suspend fun getAsignaturasCatalog(): Result<List<AsignaturaCatalog>> = runCatching {
-        supabase.from("asignatura").select().decodeList()
+        supabase.from("asignatura").select(Columns.raw("id, nombre, codigo")).decodeList()
     }
 
     // Catálogo de laboratorios
     suspend fun getLaboratoriosCatalog(): Result<List<LaboratorioCatalog>> = runCatching {
-        supabase.from("laboratorio").select().decodeList()
+        supabase.from("laboratorio").select(Columns.raw("id, nombre, ubicacion")).decodeList()
     }
 
     // Cierra la sesión activa
@@ -167,6 +202,25 @@ class SesionRepository @Inject constructor(private val supabase: SupabaseClient)
 
 // ── Helpers privados ──────────────────────────────────────────────────────────
 
+private fun calcMinutosRestantes(sesion: com.example.aulix.domain.model.Sesion): Int {
+    return try {
+        val fecha = sesion.reserva?.fecha
+        val hora  = sesion.reserva?.horaInicio
+        android.util.Log.e("SesionRepo", "calcMinutos → reserva=${sesion.reserva != null} fecha='$fecha' hora='$hora'")
+        if (fecha.isNullOrBlank() || hora.isNullOrBlank()) return 0
+        val inicio = java.time.LocalDateTime.of(
+            java.time.LocalDate.parse(fecha),
+            java.time.LocalTime.parse(hora.take(5)),
+        )
+        val diff = java.time.Duration.between(java.time.LocalDateTime.now(), inicio).toMinutes()
+        android.util.Log.e("SesionRepo", "calcMinutos → inicio=$inicio diff=$diff min")
+        diff.toInt().coerceAtLeast(0)
+    } catch (e: Exception) {
+        android.util.Log.e("SesionRepo", "calcMinutos falló: ${e.message}")
+        0
+    }
+}
+
 private fun calcHoraFin(horaInicio: String, duracion: String): String {
     return try {
         val parts = horaInicio.take(5).split(":")
@@ -180,6 +234,28 @@ private fun calcHoraFin(horaInicio: String, duracion: String): String {
 }
 
 // ── Tipos internos para deserialización de consultas específicas ──────────────
+
+@kotlinx.serialization.Serializable
+private data class ReservaInsert(
+    val titulo: String,
+    val grupo: String? = null,
+    @kotlinx.serialization.SerialName("hora_inicio")   val horaInicio: String,
+    @kotlinx.serialization.SerialName("hora_fin")      val horaFin: String,
+    val fecha: String,
+    @kotlinx.serialization.SerialName("color_hex")     val colorHex: String,
+    @kotlinx.serialization.SerialName("docente_id")    val docenteId: String,
+    val estado: String,
+    @kotlinx.serialization.SerialName("asignatura_id") val asignaturaId: String,
+    @kotlinx.serialization.SerialName("laboratorio_id") val laboratorioId: String,
+)
+
+@kotlinx.serialization.Serializable
+private data class SesionInsert(
+    @kotlinx.serialization.SerialName("reserva_id")        val reservaId: String,
+    @kotlinx.serialization.SerialName("docente_id")        val docenteId: String,
+    @kotlinx.serialization.SerialName("codigo_asistencia") val codigoAsistencia: String,
+    val estado: String,
+)
 
 @kotlinx.serialization.Serializable
 private data class ReservaMinima(val id: String)

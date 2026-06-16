@@ -1,8 +1,10 @@
 package com.example.aulix.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -48,6 +50,17 @@ import com.example.aulix.ui.soporte.incidencias.RegistrarIncidenciaScreen
 import com.example.aulix.ui.soporte.mantenimiento.ProgramarMantenimientoScreen
 import com.example.aulix.ui.soporte.metricas.SoporteMetricasScreen
 import com.example.aulix.ui.soporte.perfil.SoportePerfilScreen
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 
 sealed interface Route {
@@ -248,15 +261,27 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
 
         composable<Route.DocenteAgenda> {
             val state by docenteVm.uiState.collectAsState()
-            AgendaScreen(
-                eventos = state.agenda,
-                laboratorios = state.laboratorios.map { it.nombre },
-                onHoy = { navController.navigate(Route.DocenteDashboard) { popUpTo(Route.DocenteDashboard) { inclusive = true } } },
-                onIndicadores = { navController.navigate(Route.DocenteIndicadores) },
-                onPerfil = { navController.navigate(Route.DocentePerfil) },
-                onNuevaClase = { navController.navigate(Route.DocenteEditarClase()) },
-                onEditarClase = { id -> navController.navigate(Route.DocenteEditarClase(id)) },
-            )
+            val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+            androidx.compose.runtime.LaunchedEffect(state.error) {
+                state.error?.let {
+                    snackbarHostState.showSnackbar(it)
+                    docenteVm.clearError()
+                }
+            }
+            androidx.compose.material3.Scaffold(
+                snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            ) { _ ->
+                AgendaScreen(
+                    eventos = state.agenda,
+                    laboratorios = state.laboratorios.map { it.nombre },
+                    onHoy = { navController.navigate(Route.DocenteDashboard) { popUpTo(Route.DocenteDashboard) { inclusive = true } } },
+                    onIndicadores = { navController.navigate(Route.DocenteIndicadores) },
+                    onPerfil = { navController.navigate(Route.DocentePerfil) },
+                    onNuevaClase = { navController.navigate(Route.DocenteEditarClase()) },
+                    onEditarClase = { id -> navController.navigate(Route.DocenteEditarClase(id)) },
+                )
+            }
         }
 
         composable<Route.DocenteEditarClase> {
@@ -364,8 +389,8 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         composable<Route.EstudianteConfirmacion> {
             val state by estudianteVm.uiState.collectAsState()
             val comprobante = state.comprobanteReciente
-            if (comprobante != null) {
-                ConfirmacionAsistenciaScreen(
+            when {
+                comprobante != null -> ConfirmacionAsistenciaScreen(
                     comprobante = comprobante,
                     onGuardar = {
                         navController.navigate(Route.EstudianteDashboard) {
@@ -378,6 +403,34 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                         }
                     },
                 )
+                state.error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = state.error ?: "Error al registrar asistencia",
+                                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Button(onClick = {
+                                estudianteVm.clearError()
+                                navController.popBackStack()
+                            }) {
+                                Text("Volver")
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
             }
         }
 

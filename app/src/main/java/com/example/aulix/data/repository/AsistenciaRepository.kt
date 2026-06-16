@@ -14,11 +14,11 @@ class AsistenciaRepository @Inject constructor(private val supabase: SupabaseCli
     suspend fun registrar(sesionId: String, metodo: String): Result<String> = runCatching {
         val uid = supabase.auth.currentUserOrNull()!!.id
         supabase.from("asistencia").insert(
-            mapOf(
-                "sesion_id"    to sesionId,
-                "estudiante_id" to uid,
-                "metodo"       to metodo,
-                "presente"     to true,
+            AsistenciaInsert(
+                sesionId     = sesionId,
+                estudianteId = uid,
+                metodo       = metodo,
+                presente     = true,
             )
         )
         sesionId
@@ -74,7 +74,38 @@ class AsistenciaRepository @Inject constructor(private val supabase: SupabaseCli
         val metodo: String,
         val codigoSesion: String,
     )
+
+    data class AsistenciaResumen(
+        val sesionId: String,
+        val asignaturaNombre: String,
+    )
+
+    // Una fila por cada asistencia del docente: sesion_id + asignatura (via joins)
+    suspend fun getResumenAsistenciaDocente(docenteId: String): Result<List<AsistenciaResumen>> = runCatching {
+        supabase.from("asistencia")
+            .select(Columns.raw("""
+                sesion_id,
+                sesion:sesion_id!inner(
+                    docente_id,
+                    reserva:reserva_id(
+                        asignatura:asignatura_id(nombre)
+                    )
+                )
+            """.trimIndent())) {
+                filter { eq("sesion.docente_id", docenteId) }
+            }
+            .decodeList<AsistenciaResumenRow>()
+            .map { AsistenciaResumen(sesionId = it.sesionId, asignaturaNombre = it.asignaturaNombre) }
+    }
 }
+
+@kotlinx.serialization.Serializable
+private data class AsistenciaInsert(
+    @kotlinx.serialization.SerialName("sesion_id")     val sesionId: String,
+    @kotlinx.serialization.SerialName("estudiante_id") val estudianteId: String,
+    val metodo: String,
+    val presente: Boolean,
+)
 
 @kotlinx.serialization.Serializable
 private data class AsistenciaHistorialRow(
@@ -111,3 +142,26 @@ private data class ReservaResumenRow(
 
 private fun String.safeTime(): String =
     if (length >= 16) substring(11, 16) else take(5)
+
+@kotlinx.serialization.Serializable
+private data class AsistenciaResumenRow(
+    @kotlinx.serialization.SerialName("sesion_id") val sesionId: String = "",
+    val sesion: SesionDocRow? = null,
+) {
+    val asignaturaNombre: String get() = sesion?.reserva?.asignatura?.nombre ?: ""
+}
+
+@kotlinx.serialization.Serializable
+private data class SesionDocRow(
+    val reserva: ReservaDocRow? = null,
+)
+
+@kotlinx.serialization.Serializable
+private data class ReservaDocRow(
+    val asignatura: AsignaturaDocRow? = null,
+)
+
+@kotlinx.serialization.Serializable
+private data class AsignaturaDocRow(
+    val nombre: String = "",
+)

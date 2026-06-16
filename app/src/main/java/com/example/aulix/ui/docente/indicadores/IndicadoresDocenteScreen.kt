@@ -88,7 +88,7 @@ fun IndicadoresDocenteScreen(
 
                 // 3 KPIs
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    KpiCard("—", "Asistencia promedio", StatusGreen, null, Modifier.weight(1f))
+                    KpiCard(indicState.asistenciaPromedio, "Asistencia promedio", StatusGreen, null, Modifier.weight(1f))
                     KpiCard(indicState.sesionesTotales.toString(), "Sesiones dictadas", Tinta, null, Modifier.weight(1f))
                     KpiCard("—", "Inasist. críticas", StatusRed, null, Modifier.weight(1f))
                 }
@@ -101,15 +101,19 @@ fun IndicadoresDocenteScreen(
                 }
                 Spacer(Modifier.height(10.dp))
                 AulixCard {
-                    val barras = listOf(
-                        BarraAsignatura("Redes y Telecom.", 91, StatusGreen),
-                        BarraAsignatura("Bases de Datos II", 84, Cobalto),
-                        BarraAsignatura("Programación Móvil", 78, Cobre),
-                        BarraAsignatura("Arquitectura", 69, Cobre),
-                    )
-                    barras.forEachIndexed { i, b ->
-                        if (i > 0) Spacer(Modifier.height(12.dp))
-                        BarraRow(b)
+                    if (indicState.asistenciaPorAsignatura.isEmpty()) {
+                        Text(
+                            "Sin datos de asistencia aún",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Tinta.copy(alpha = 0.4f),
+                            modifier = Modifier.padding(vertical = 8.dp),
+                        )
+                    } else {
+                        val colores = listOf(StatusGreen, Cobalto, Cobre, StatusAmber)
+                        indicState.asistenciaPorAsignatura.forEachIndexed { i, asig ->
+                            if (i > 0) Spacer(Modifier.height(12.dp))
+                            BarraRow(BarraAsignatura(asig.nombre, asig.tasa, colores[i % colores.size]))
+                        }
                     }
                 }
 

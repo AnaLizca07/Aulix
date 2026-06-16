@@ -28,6 +28,7 @@ class RegistrarPrestamoViewModel @Inject constructor(
         val destinatarios: List<Destinatario> = emptyList(),
         val duracionSeleccionada: Int = 2,
         val sinNovedad: Boolean = true,
+        val observaciones: String = "",
         val confirmado: Boolean = false,
         val horaInicio: String = "",
         val horaDevolucion: String = "",
@@ -83,7 +84,11 @@ class RegistrarPrestamoViewModel @Inject constructor(
     }
 
     fun onEstadoChange(sinNovedad: Boolean) {
-        _uiState.update { it.copy(sinNovedad = sinNovedad) }
+        _uiState.update { it.copy(sinNovedad = sinNovedad, observaciones = "") }
+    }
+
+    fun onObservacionesChange(texto: String) {
+        _uiState.update { it.copy(observaciones = texto) }
     }
 
     fun confirmarPrestamo(responsable: String) {
@@ -93,14 +98,16 @@ class RegistrarPrestamoViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             prestamoRepo.registrar(
-                equipoId = equipo.id,
+                equipoId      = equipo.id,
                 solicitanteId = state.destinatarioId,
                 duracionHoras = state.duracionSeleccionada,
-                sinNovedad = state.sinNovedad,
-                sesionId = null,
+                sinNovedad    = state.sinNovedad,
+                sesionId      = null,
+                observaciones = state.observaciones.trim().ifBlank { null },
             )
                 .onSuccess { _uiState.update { it.copy(isLoading = false, confirmado = true) } }
                 .onFailure { e -> _uiState.update { it.copy(isLoading = false, error = e.message) } }
+            Unit
         }
     }
 

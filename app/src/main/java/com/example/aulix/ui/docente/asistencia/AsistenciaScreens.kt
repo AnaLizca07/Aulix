@@ -143,11 +143,11 @@ fun AsistenciaQrScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        buildString { append("${sesion.asistentesConfirmados}") },
+                        "${asistentes.size}",
                         style = MaterialTheme.typography.displayLarge,
                         color = TextOnDark,
                     )
-                    Text("/${sesion.totalEstudiantes}", style = MaterialTheme.typography.titleLarge, color = TextMutedDark, modifier = Modifier.padding(top = 8.dp))
+                    Text(" asistentes", style = MaterialTheme.typography.titleLarge, color = TextMutedDark, modifier = Modifier.padding(top = 8.dp))
                     Spacer(Modifier.width(14.dp))
                     Column {
                         Text("Asistentes confirmados", style = MaterialTheme.typography.titleSmall, color = TextOnDark)
@@ -292,7 +292,7 @@ fun CodigoTiempoScreen(
 
                 Spacer(Modifier.height(20.dp))
                 Text(
-                    "CONFIRMACIONES · ${sesion.asistentesConfirmados}/${sesion.totalEstudiantes}",
+                    "CONFIRMACIONES · ${asistentes.size}",
                     style = MaterialTheme.typography.labelSmall,
                     color = Tinta.copy(alpha = 0.45f),
                     letterSpacing = 1.sp,
@@ -302,11 +302,19 @@ fun CodigoTiempoScreen(
                 Column(
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White).padding(horizontal = 14.dp),
                 ) {
-                    ConfirmacionRow("Pérez, L.", "hace 12s", valida = true)
-                    HorizontalDivider(color = Tinta.copy(alpha = 0.07f))
-                    ConfirmacionRow("Vargas, J.", "hace 40s", valida = true)
-                    HorizontalDivider(color = Tinta.copy(alpha = 0.07f))
-                    ConfirmacionRow("Código inválido · A1234", "hace 1m", valida = false)
+                    if (asistentes.isEmpty()) {
+                        Text(
+                            "Aún no hay asistentes confirmados",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Tinta.copy(alpha = 0.4f),
+                            modifier = Modifier.padding(vertical = 16.dp),
+                        )
+                    } else {
+                        asistentes.forEachIndexed { i, a ->
+                            if (i > 0) HorizontalDivider(color = Tinta.copy(alpha = 0.07f))
+                            ConfirmacionRow(a.nombre, a.hora, valida = true)
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))

@@ -8,6 +8,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.storage.storage
 import javax.inject.Inject
 
 class IncidenciaRepository @Inject constructor(private val supabase: SupabaseClient) {
@@ -63,31 +64,37 @@ class IncidenciaRepository @Inject constructor(private val supabase: SupabaseCli
         }
     }
 
+    suspend fun subirEvidencia(path: String, bytes: ByteArray): Result<String> = runCatching {
+        supabase.storage.from("evidencias").upload(path, bytes) { upsert = false }
+        supabase.storage.from("evidencias").publicUrl(path)
+    }
+
     suspend fun registrar(
         titulo: String,
         descripcion: String,
         severidad: PrioridadIncidencia,
-        equipoId: String,
+        equipoId: String?,
         sesionId: String?,
-    ): Result<Incidencia> = runCatching {
+        evidencias: List<String> = emptyList(),
+    ): Result<Unit> = runCatching {
         val uid = supabase.auth.currentUserOrNull()!!.id
         val sevStr = when (severidad) {
             PrioridadIncidencia.ALTA  -> "alta"
             PrioridadIncidencia.MEDIA -> "media"
             PrioridadIncidencia.BAJA  -> "baja"
         }
-        val payload = buildMap<String, Any?> {
-            put("titulo",        titulo)
-            put("descripcion",   descripcion)
-            put("severidad",     sevStr)
-            put("equipo_id",     equipoId)
-            put("reportado_por", uid)
-            put("estado",        "abierta")
-            if (sesionId != null) put("sesion_id", sesionId)
-        }
-        supabase.from("incidencia").insert(payload) { select(Columns.raw(incidenciaSelect)) }
-            .decodeSingle<Incidencia>()
-            .conLineaTiempoSintetica()
+        supabase.from("incidencia").insert(
+            IncidenciaInsert(
+                titulo       = titulo,
+                descripcion  = descripcion,
+                severidad    = sevStr,
+                equipoId     = equipoId,
+                reportadoPor = uid,
+                estado       = "abierta",
+                sesionId     = sesionId,
+                evidencias   = evidencias.ifEmpty { null },
+            )
+        )
     }
 
     // Construye una línea de tiempo sintética a partir de los datos disponibles
@@ -116,6 +123,18 @@ class IncidenciaRepository @Inject constructor(private val supabase: SupabaseCli
         return copy(lineaTiempo = eventos)
     }
 }
+
+@kotlinx.serialization.Serializable
+private data class IncidenciaInsert(
+    val titulo: String,
+    val descripcion: String,
+    val severidad: String,
+    @kotlinx.serialization.SerialName("equipo_id")     val equipoId: String? = null,
+    @kotlinx.serialization.SerialName("reportado_por") val reportadoPor: String,
+    val estado: String,
+    @kotlinx.serialization.SerialName("sesion_id")     val sesionId: String? = null,
+    val evidencias: List<String>? = null,
+)
 
 @kotlinx.serialization.Serializable
 private data class EstadoFechaRow(

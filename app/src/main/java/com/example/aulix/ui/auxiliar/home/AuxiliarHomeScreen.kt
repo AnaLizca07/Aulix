@@ -46,6 +46,8 @@ fun AuxiliarHomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(Unit) { viewModel.recargarDatos() }
+
     Scaffold(
         containerColor = Lienzo,
         bottomBar = {

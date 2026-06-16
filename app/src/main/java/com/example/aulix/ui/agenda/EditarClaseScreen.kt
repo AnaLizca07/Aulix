@@ -68,7 +68,7 @@ fun EditarClaseScreen(
     val asignaturaSeleccionada = asignaturas.find { it.id == asignaturaId }
     val laboratorioSeleccionado = laboratorios.find { it.id == laboratorioId }
 
-    val valido = titulo.isNotBlank() && hora.isNotBlank()
+    val valido = titulo.isNotBlank() && hora.isNotBlank() && asignaturaId.isNotBlank() && laboratorioId.isNotBlank()
 
     Scaffold(
         containerColor = Lienzo,

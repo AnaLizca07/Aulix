@@ -34,11 +34,13 @@ class EstudianteViewModel @Inject constructor(
 
     data class UiState(
         val sesionActiva: Sesion? = null,
+        val yaRegistrado: Boolean = false,
         val asignaturas: List<Asignatura> = emptyList(),
         val agenda: List<EventoAgenda> = emptyList(),
         val historial: List<RegistroAsistencia> = emptyList(),
         val comprobanteReciente: Comprobante? = null,
         val isLoading: Boolean = false,
+        val isRegistrando: Boolean = false,
         val error: String? = null,
     ) {
         val resumen: Triple<Int, Int, Int>
@@ -73,7 +75,14 @@ class EstudianteViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             sesionRepo.getSesionActivaEstudiante()
-                .onSuccess { sesion -> _uiState.update { it.copy(sesionActiva = sesion, isLoading = false) } }
+                .onSuccess { sesion ->
+                    _uiState.update { it.copy(sesionActiva = sesion, isLoading = false) }
+                    if (sesion != null) {
+                        val yaRegistrado = asistenciaRepo.getComprobanteReciente(sesion.id)
+                            .getOrNull() != null
+                        _uiState.update { it.copy(yaRegistrado = yaRegistrado) }
+                    }
+                }
                 .onFailure { _uiState.update { it.copy(isLoading = false) } }
             sesionRepo.getAgenda()
                 .onSuccess { agenda -> _uiState.update { it.copy(agenda = agenda) } }
@@ -99,6 +108,7 @@ class EstudianteViewModel @Inject constructor(
     }
 
     fun registrarAsistencia(sesionId: String, metodo: String) {
+        _uiState.update { it.copy(isRegistrando = true, error = null, comprobanteReciente = null) }
         viewModelScope.launch {
             asistenciaRepo.registrar(sesionId, metodo)
                 .onSuccess {
@@ -106,6 +116,8 @@ class EstudianteViewModel @Inject constructor(
                         .onSuccess { c ->
                             _uiState.update {
                                 it.copy(
+                                    isRegistrando = false,
+                                    yaRegistrado = true,
                                     comprobanteReciente = c?.let { comp ->
                                         Comprobante(
                                             sesion = comp.sesionNombre,
@@ -119,8 +131,11 @@ class EstudianteViewModel @Inject constructor(
                                 )
                             }
                         }
+                        .onFailure { e -> _uiState.update { it.copy(isRegistrando = false, error = e.message) } }
                 }
-                .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
+                .onFailure { e -> _uiState.update { it.copy(isRegistrando = false, error = e.message) } }
         }
     }
+
+    fun clearError() { _uiState.update { it.copy(error = null) } }
 }

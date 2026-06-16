@@ -50,7 +50,10 @@ class DocenteViewModel @Inject constructor(
                 .onSuccess { activa ->
                     val sesion = activa ?: sesionRepo.getSesionProgramada().getOrNull()
                     _uiState.update { it.copy(sesion = sesion, isLoading = false) }
-                    if (activa != null) cargarAsistentes(activa.id)
+                    if (activa != null) {
+                        cargarAsistentes(activa.id)
+                        if (timerJob == null || timerJob?.isActive == false) iniciarTimerQr()
+                    }
                 }
                 .onFailure { e ->
                     _uiState.update { it.copy(isLoading = false, error = e.message) }
@@ -78,7 +81,18 @@ class DocenteViewModel @Inject constructor(
         }
     }
 
-    fun renovarQr() { iniciarTimerQr() }
+    fun renovarQr() {
+        val sesionId = _uiState.value.sesion?.id ?: return
+        val nuevoCodigo = (100000..999999).random().toString()
+        viewModelScope.launch {
+            sesionRepo.renovarCodigo(sesionId, nuevoCodigo)
+                .onSuccess { sesion ->
+                    _uiState.update { it.copy(sesion = sesion) }
+                    iniciarTimerQr()
+                }
+                .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
+        }
+    }
 
     private fun iniciarTimerQr() {
         timerJob?.cancel()
@@ -102,7 +116,6 @@ class DocenteViewModel @Inject constructor(
 
     fun guardarEvento(evento: EventoAgenda) {
         if (evento.id.isBlank()) {
-            // Nueva clase: persistir en Supabase
             viewModelScope.launch {
                 sesionRepo.crearReserva(evento)
                     .onSuccess { guardado ->
@@ -110,16 +123,29 @@ class DocenteViewModel @Inject constructor(
                         agenda.add(guardado)
                         _uiState.update { it.copy(agenda = agenda) }
                     }
-                    .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
+                    .onFailure { e ->
+                        android.util.Log.e("DocenteVM", "crearReserva falló", e)
+                        _uiState.update { it.copy(error = e.message) }
+                    }
             }
         } else {
-            // Edición en memoria (actualización de reserva existente no implementada aún)
-            val agenda = _uiState.value.agenda.toMutableList()
-            val index = agenda.indexOfFirst { it.id == evento.id }
-            if (index != -1) agenda[index] = evento
-            _uiState.update { it.copy(agenda = agenda) }
+            viewModelScope.launch {
+                sesionRepo.actualizarReserva(evento)
+                    .onSuccess {
+                        val agenda = _uiState.value.agenda.toMutableList()
+                        val index = agenda.indexOfFirst { it.id == evento.id }
+                        if (index != -1) agenda[index] = evento
+                        _uiState.update { it.copy(agenda = agenda) }
+                    }
+                    .onFailure { e ->
+                        android.util.Log.e("DocenteVM", "actualizarReserva falló", e)
+                        _uiState.update { it.copy(error = e.message) }
+                    }
+            }
         }
     }
+
+    fun clearError() { _uiState.update { it.copy(error = null) } }
 
     private fun cargarAsistentes(sesionId: String) {
         viewModelScope.launch {

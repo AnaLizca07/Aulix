@@ -174,7 +174,7 @@ fun RegistrarPrestamoScreen(
                                 color = Tinta
                             )
                             Text(
-                                text = "${state.destinatarioId} · ${state.destinatarioPrograma}",
+                                text = state.destinatarioPrograma.ifBlank { "Sin programa" },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Tinta.copy(alpha = 0.5f)
                             )
@@ -336,10 +336,46 @@ fun RegistrarPrestamoScreen(
                     }
                 }
 
+                if (!state.sinNovedad) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = state.observaciones,
+                        onValueChange = { viewModel.onObservacionesChange(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Descripción de la observación") },
+                        placeholder = { Text("Ej: pantalla rayada, cable dañado…", style = MaterialTheme.typography.bodySmall) },
+                        minLines = 3,
+                        maxLines = 5,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = BorderLight,
+                            focusedBorderColor = Cobalto,
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                        ),
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(4.dp))
 
+                if (state.error != null) {
+                    Text(
+                        text = state.error ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (state.destinatarioId.isBlank()) {
+                    Text(
+                        text = "Selecciona un destinatario antes de confirmar",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Cobre,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 AulixButton(
-                    text = "✓ Confirmar préstamo",
+                    text = if (state.isLoading) "Registrando..." else "✓ Confirmar préstamo",
                     onClick = { viewModel.confirmarPrestamo(user.fullName) }
                 )
 

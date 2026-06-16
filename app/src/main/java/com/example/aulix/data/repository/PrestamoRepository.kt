@@ -46,21 +46,27 @@ class PrestamoRepository @Inject constructor(private val supabase: SupabaseClien
         duracionHoras: Int,
         sinNovedad: Boolean,
         sesionId: String?,
-    ): Result<Prestamo> = runCatching {
+        observaciones: String? = null,
+    ): Result<Unit> = runCatching {
         val uid = supabase.auth.currentUserOrNull()!!.id
         val devolucionMs = System.currentTimeMillis() + duracionHoras * 3600_000L
         val devolucionIso = java.time.Instant.ofEpochMilli(devolucionMs).toString()
 
-        val payload = buildMap<String, Any?> {
-            put("equipo_id",       equipoId)
-            put("solicitante_id",  solicitanteId)
-            put("auxiliar_id",     uid)
-            put("sin_novedad",     sinNovedad)
-            put("fecha_devolucion", devolucionIso)
-            put("estado",          "activo")
-            if (sesionId != null) put("sesion_id", sesionId)
+        supabase.from("prestamo").insert(
+            PrestamoInsert(
+                equipoId        = equipoId,
+                solicitanteId   = solicitanteId,
+                auxiliarId      = uid,
+                sinNovedad      = sinNovedad,
+                observaciones   = observaciones,
+                fechaDevolucion = devolucionIso,
+                estado          = "activo",
+                sesionId        = sesionId,
+            )
+        )
+        supabase.from("equipo").update({ set("estado", "prestado") }) {
+            filter { eq("id", equipoId) }
         }
-        supabase.from("prestamo").insert(payload) { select(Columns.raw(prestamoSelect)) }.decodeSingle()
     }
 
     // Devolver equipo
@@ -80,6 +86,18 @@ class PrestamoRepository @Inject constructor(private val supabase: SupabaseClien
         }
     }
 }
+
+@kotlinx.serialization.Serializable
+private data class PrestamoInsert(
+    @kotlinx.serialization.SerialName("equipo_id")        val equipoId: String,
+    @kotlinx.serialization.SerialName("solicitante_id")   val solicitanteId: String,
+    @kotlinx.serialization.SerialName("auxiliar_id")      val auxiliarId: String,
+    @kotlinx.serialization.SerialName("sin_novedad")      val sinNovedad: Boolean,
+    val observaciones: String? = null,
+    @kotlinx.serialization.SerialName("fecha_devolucion") val fechaDevolucion: String,
+    val estado: String,
+    @kotlinx.serialization.SerialName("sesion_id")        val sesionId: String? = null,
+)
 
 @kotlinx.serialization.Serializable
 private data class EstadoRow(val estado: String = "")

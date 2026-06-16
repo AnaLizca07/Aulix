@@ -14,6 +14,7 @@ data class Prestamo(
     @SerialName("solicitante") val solicitanteEmbedido: UsuarioEmbedido? = null,
     @SerialName("auxiliar")    val auxiliarEmbedido: UsuarioEmbedido? = null,
     @SerialName("sin_novedad") val sinNovedad: Boolean = true,
+    val observaciones: String? = null,
     val estado: EstadoPrestamo = EstadoPrestamo.ACTIVO,
     @SerialName("fecha_prestamo")   val fechaPrestamo: String = "",
     @SerialName("fecha_devolucion") val fechaDevolucion: String? = null,

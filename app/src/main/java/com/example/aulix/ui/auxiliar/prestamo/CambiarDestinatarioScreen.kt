@@ -164,7 +164,7 @@ private fun DestinatarioRow(
                 color = Tinta
             )
             Text(
-                text = "${destinatario.id} · ${destinatario.programa}",
+                text = destinatario.programa,
                 style = MaterialTheme.typography.bodySmall,
                 color = Tinta.copy(alpha = 0.5f)
             )
